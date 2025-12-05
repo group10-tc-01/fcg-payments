@@ -8,7 +8,7 @@ namespace FCG.Payments.Domain.Payments.ValueObjects
 
         private Amount(decimal value)
         {
-            if (value < 0)
+            if (value <= 0)
             {
                 throw new DomainException("Amount cannot be negative or zero");
             }
