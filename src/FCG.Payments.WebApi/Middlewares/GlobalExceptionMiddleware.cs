@@ -1,6 +1,5 @@
-﻿using FCG.Payments.WebApi.Models;
-using FCG.Users.Domain.Exceptions;
-using FCG.Users.Messages;
+﻿using FCG.Payments.Domain.Exceptions;
+using FCG.Payments.WebApi.Models;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics.CodeAnalysis;
@@ -97,10 +96,10 @@ namespace FCG.Payments.WebApi.Middlewares
 
             var problemDetails = new ProblemDetails
             {
-                Title = ResourceMessages.UnexpectedErrorOccurred,
+                Title = "An unexpected error occurred!",
                 Status = context.Response.StatusCode,
                 Instance = context.Request.Path,
-                Detail = ResourceMessages.PleaseContactSupport,
+                Detail = "Please contact support."
             };
 
             problemDetails.Extensions["traceId"] = traceId;
