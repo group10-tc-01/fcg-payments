@@ -1,0 +1,80 @@
+name: Payments CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io
+  IMAGE_NAME: fcg-payments
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate version
+      id: version
+      run: |
+        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $latest_tag"
+        
+        version_without_v=${latest_tag#v}
+        IFS='.' read -r major minor patch <<< "$version_without_v"
+        
+        patch=$((patch + 1))
+        new_version="$major.$minor.$patch"
+        tag="v$new_version"
+        
+        echo "New version: $new_version"
+        echo "version=$new_version" >> $GITHUB_OUTPUT
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+    
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REGISTRY }}
+        username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+    
+    - name: Build and push Docker image
+      run: |
+        IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        
+        docker build \
+          --file src/FCG.Payments.WebApi/Dockerfile \
+          --build-arg BUILD_CONFIGURATION=Release \
+          -t ${IMAGE}:${{ steps.version.outputs.version }} \
+          -t ${IMAGE}:latest \
+          .
+        
+        docker push ${IMAGE}:${{ steps.version.outputs.version }}
+        docker push ${IMAGE}:latest
+        
+        echo "Image pushed: ${IMAGE}:${{ steps.version.outputs.version }}"
+    
+    - name: Create and push tag
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@payments.noreply.github.com"
+        git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.version }}"
+        git push origin ${{ steps.version.outputs.tag }}
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.version }}
+        generate_release_notes: true
