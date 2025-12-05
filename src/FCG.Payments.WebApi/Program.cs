@@ -1,3 +1,4 @@
+using FCG.Payments.Application.DependencyInjection;
 using FCG.Payments.WebApi.DependencyInjection;
 using FCG.Payments.WebApi.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -21,6 +22,7 @@ namespace FCG.Payments.WebApi
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddWebApi(builder.Configuration);
+            builder.Services.AddApplication();
 
             var app = builder.Build();
 
