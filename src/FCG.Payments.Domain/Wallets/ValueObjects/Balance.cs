@@ -13,8 +13,8 @@ namespace FCG.Payments.Domain.Wallets.ValueObjects
 
         public static Balance Create(decimal value)
         {
-            if (value < 0)
-                throw new DomainException("Balance cannot be negative");
+            if (value <= 0)
+                throw new DomainException("Balance cannot be negative or zero");
 
             return new Balance(value);
         }
