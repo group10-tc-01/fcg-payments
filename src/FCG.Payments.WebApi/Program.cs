@@ -1,3 +1,7 @@
+using FCG.Payments.WebApi.DependencyInjection;
+using FCG.Payments.WebApi.Extensions;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FCG.Payments.WebApi
@@ -14,14 +18,38 @@ namespace FCG.Payments.WebApi
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddWebApi(builder.Configuration);
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("Application started successfully");
+            logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
+
+            if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Docker")
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                //app.ApplyMigrations();
+                //logger.LogInformation("Migrations applied");
             }
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
+            app.UseCustomerExceptionHandler();
+            app.UseGlobalCorrelationId();
+
+            app.MapHealthChecks("/health", new HealthCheckOptions
+            {
+                AllowCachingResponses = false,
+                ResultStatusCodes =
+                {
+                    [HealthStatus.Healthy] = StatusCodes.Status200OK,
+                    [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+                }
+
+            });
 
             app.UseHttpsRedirection();
 
