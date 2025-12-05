@@ -1,0 +1,315 @@
+name: Payments CI Pipeline
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Restore and build (for tests)
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
+    
+    - name: Run unit tests with coverage
+      run: |
+        dotnet test tests/FCG.Payments.UnitTests \
+          --configuration Release \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/UnitTests \
+          --logger trx \
+          --verbosity normal \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+    
+    - name: Upload unit test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-results
+        path: ./TestResults/
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Restore and build (for tests)
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
+    
+    - name: Run integration tests with coverage
+      run: |
+        dotnet test tests/FCG.Payments.IntegratedTests \
+          --configuration Release \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/IntegrationTests \
+          --logger trx \
+          --verbosity normal \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+    
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-test-results
+        path: ./TestResults/
+
+  coverage-analysis:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: always() && (needs.unit-tests.result == 'success' || needs.integration-tests.result == 'success')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Install coverage tools
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+    
+    - name: Download unit test results
+      uses: actions/download-artifact@v4
+      with:
+        name: unit-test-results
+        path: ./TestResults-Unit/
+      continue-on-error: true
+    
+    - name: Download integration test results
+      uses: actions/download-artifact@v4
+      with:
+        name: integration-test-results  
+        path: ./TestResults-Integration/
+      continue-on-error: true
+    
+    - name: Generate coverage reports
+      run: |
+        # Find all coverage files
+        coverage_files=""
+        for pattern in "coverage.cobertura.xml" "coverage.opencover.xml" "*.coverage.xml" "*coverage*.xml"; do
+          files=$(find . -name "$pattern" -type f 2>/dev/null || true)
+          if [ ! -z "$files" ]; then
+            echo "Found files with pattern $pattern:"
+            echo "$files"
+            coverage_files="$coverage_files $files"
+          fi
+        done
+        
+        if [ ! -z "$coverage_files" ]; then
+          echo "Using coverage files: $coverage_files"
+          reportgenerator \
+            -reports:"$(echo $coverage_files | tr ' ' ';')" \
+            -targetdir:"./CoverageReports" \
+            -reporttypes:"Cobertura;OpenCover;HtmlInline_AzurePipelines" \
+            -filefilters:"-**/tests/**;-**/FCG.Payments.UnitTests/**;-**/FCG.Payments.IntegratedTests/**;-**/FCG.Payments.FunctionalTests/**;-**/CommomTestsUtilities/**" \
+            -classfilters:"-FCG.Payments.UnitTests.*;-FCG.Payments.IntegratedTests.*;-FCG.Payments.FunctionalTests.*;-*.Tests.*;-*TestsUtilities.*" \
+            -verbosity:Info
+        else
+          echo "No coverage files found"
+          mkdir -p ./CoverageReports
+          echo '<?xml version="1.0" encoding="UTF-8"?><coverage line-rate="0" branch-rate="0" lines-covered="0" lines-valid="0" branches-covered="0" branches-valid="0" complexity="0" version="1.0" timestamp="0"></coverage>' > ./CoverageReports/Cobertura.xml
+        fi
+    
+    - name: Parse coverage results
+      id: coverage
+      run: |
+        if [ -f "./CoverageReports/Cobertura.xml" ]; then
+          coverage=$(grep -o 'line-rate="[^"]*"' ./CoverageReports/Cobertura.xml | head -1 | cut -d'"' -f2 || echo "0")
+          if [ ! -z "$coverage" ] && [ "$coverage" != "0" ]; then
+            coverage_percent=$(echo "$coverage * 100" | bc -l | printf "%.0f" $(cat))
+            echo "coverage_percent=$coverage_percent" >> $GITHUB_OUTPUT
+            echo "Coverage: $coverage_percent%"
+          else
+            echo "coverage_percent=0" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "coverage_percent=0" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Check coverage threshold and comment
+      if: github.event_name == 'pull_request'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERAGE_THRESHOLD: 80
+      run: |
+        coverage_percent=${{ steps.coverage.outputs.coverage_percent }}
+        threshold=${COVERAGE_THRESHOLD:-80}
+        
+        if [ "$coverage_percent" -lt "$threshold" ]; then
+          cat > comment.md << EOF
+        ## ⚠️ Cobertura de Testes Abaixo do Esperado
+        
+        ![Alert GIF](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWxqNTE4aGU3ZWk1NGVldTQ0eGcxMjlzN2NneGlpYzY1MjBmcHl0dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L8yQ0RQBItqso/giphy.gif)
+        
+        **Cobertura atual:** ${coverage_percent}%  
+        **Cobertura mínima esperada:** ${threshold}%  
+        **Diferença:** -$((threshold - coverage_percent))%
+        
+        Por favor, adicione mais testes para atingir a cobertura mínima antes de fazer o merge deste PR.
+        
+        ---
+        *Este comentário foi gerado automaticamente pelo workflow de CI/CD*
+        EOF
+        
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
+        else
+          cat > comment.md << EOF
+        ## ✅ Cobertura de Testes Aprovada
+        
+        ![Success GIF](https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif)
+        
+        **Cobertura atual:** ${coverage_percent}%  
+        **Cobertura mínima esperada:** ${threshold}%  
+        
+        Excelente trabalho! A cobertura de testes está acima do threshold esperado.
+        
+        ---
+        *Este comentário foi gerado automaticamente pelo workflow de CI/CD*
+        EOF
+        
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
+        fi
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: ./CoverageReports/
+    
+    - name: Fail if coverage is below threshold
+      if: steps.coverage.outputs.coverage_percent < 80
+      run: |
+        echo "Coverage ${{ steps.coverage.outputs.coverage_percent }}% is below the required threshold of 80%"
+        exit 1
+
+  sonar-analysis:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always() && needs.build.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Install tools
+      run: |
+        dotnet tool install --global dotnet-sonarscanner
+    
+    - name: Begin SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+      run: |
+        dotnet sonarscanner begin \
+          /k:"$SONAR_PROJECT_KEY" \
+          /o:"$SONAR_ORGANIZATION" \
+          /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.token="$SONAR_TOKEN" \
+          /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+          /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
+          /d:sonar.coverage.exclusions="**/tests/**/*,**/Migrations/**/*,**/Program.cs,**/Startup.cs" \
+          /d:sonar.test.exclusions="**/tests/**/*,**/*Tests*/**/*,**/*Test*/**/*"
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Run tests with coverage for SonarCloud
+      run: |
+        dotnet test \
+          --no-build \
+          --configuration Release \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          --logger trx \
+          --verbosity normal \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover \
+             DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByFile="**/Migrations/**/*.cs,**/Program.cs,**/Startup.cs" \
+             DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute"
+    
+    - name: List generated coverage files (debug)
+      run: |
+        echo "=== Arquivos de cobertura gerados ==="
+        find . -name "*.xml" -path "*/TestResults/*" | head -20
+        echo "=== Conteúdo do diretório TestResults ==="
+        find ./TestResults -type f | head -20
+    
+    - name: End SonarCloud analysis
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
