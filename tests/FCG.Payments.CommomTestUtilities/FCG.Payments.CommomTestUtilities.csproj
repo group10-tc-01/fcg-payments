@@ -12,4 +12,8 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.11" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Builders\Wallets\" />
+	</ItemGroup>
+
 </Project>
