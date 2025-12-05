@@ -1,5 +1,6 @@
 using FCG.Payments.Application.DependencyInjection;
 using FCG.Payments.Infrastructure.Auth.DependencyInjection;
+using FCG.Payments.Infrastructure.SqlServer.DependencyInjection;
 using FCG.Payments.WebApi.DependencyInjection;
 using FCG.Payments.WebApi.Extensions;
 using System.Diagnostics.CodeAnalysis;
@@ -22,6 +23,7 @@ namespace FCG.Payments.WebApi
 
             builder.Services.AddWebApi(builder.Configuration);
             builder.Services.AddApplication();
+            builder.Services.AddSqlServerInfrastructure(builder.Configuration);
             builder.Services.AddAuthInfrastruture(builder.Configuration);
 
             var app = builder.Build();
