@@ -23,9 +23,6 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance.Configurations
             builder.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime2");
 
-            builder.Property(e => e.IsActive)
-                .IsRequired()
-                .HasDefaultValue(true);
         }
     }
 }
