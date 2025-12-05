@@ -1,4 +1,6 @@
 ﻿using FCG.Payments.Domain.Abstractions;
+using FCG.Payments.Domain.Payments;
+using FCG.Payments.Domain.Wallets;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -10,6 +12,10 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance
     public class FcgPaymentDbContext : DbContext, IUnitOfWork
     {
         private readonly IPublisher _publisher;
+
+        public DbSet<Wallet> Wallet { get; set; }
+        public DbSet<Payment> Payment { get; set; }
+
         public FcgPaymentDbContext(DbContextOptions<FcgPaymentDbContext> options, IPublisher publisher) : base(options)
         {
             _publisher = publisher;
