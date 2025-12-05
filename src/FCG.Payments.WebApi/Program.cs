@@ -1,8 +1,7 @@
 using FCG.Payments.Application.DependencyInjection;
+using FCG.Payments.Infrastructure.Auth.DependencyInjection;
 using FCG.Payments.WebApi.DependencyInjection;
 using FCG.Payments.WebApi.Extensions;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FCG.Payments.WebApi
@@ -23,6 +22,7 @@ namespace FCG.Payments.WebApi
 
             builder.Services.AddWebApi(builder.Configuration);
             builder.Services.AddApplication();
+            builder.Services.AddAuthInfrastruture(builder.Configuration);
 
             var app = builder.Build();
 
@@ -42,16 +42,16 @@ namespace FCG.Payments.WebApi
             app.UseCustomerExceptionHandler();
             app.UseGlobalCorrelationId();
 
-            app.MapHealthChecks("/health", new HealthCheckOptions
-            {
-                AllowCachingResponses = false,
-                ResultStatusCodes =
-                {
-                    [HealthStatus.Healthy] = StatusCodes.Status200OK,
-                    [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
-                }
+            //app.MapHealthChecks("/health", new HealthCheckOptions
+            //{
+            //    AllowCachingResponses = false,
+            //    ResultStatusCodes =
+            //    {
+            //        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+            //        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+            //    }
 
-            });
+            //});
 
             app.UseHttpsRedirection();
 
