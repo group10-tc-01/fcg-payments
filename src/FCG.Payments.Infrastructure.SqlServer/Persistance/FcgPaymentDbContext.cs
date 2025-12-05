@@ -7,17 +7,17 @@ using System.Diagnostics.CodeAnalysis;
 namespace FCG.Payments.Infrastructure.SqlServer.Persistance
 {
     [ExcludeFromCodeCoverage]
-    public class FcgUserDbContext : DbContext, IUnitOfWork
+    public class FcgPaymentDbContext : DbContext, IUnitOfWork
     {
         private readonly IPublisher _publisher;
-        public FcgUserDbContext(DbContextOptions<FcgUserDbContext> options, IPublisher publisher) : base(options)
+        public FcgPaymentDbContext(DbContextOptions<FcgPaymentDbContext> options, IPublisher publisher) : base(options)
         {
             _publisher = publisher;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(FcgUserDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(FcgPaymentDbContext).Assembly);
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

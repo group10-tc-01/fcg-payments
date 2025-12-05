@@ -20,7 +20,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.DependencyInjection
 
         private static void AddSqlServer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<FcgUserDbContext>(options =>
+            services.AddDbContext<FcgPaymentDbContext>(options =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
             });
@@ -29,7 +29,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.DependencyInjection
         private static void AddRepositories(this IServiceCollection services)
         {
 
-            services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgUserDbContext>());
+            services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgPaymentDbContext>());
         }
     }
 }
