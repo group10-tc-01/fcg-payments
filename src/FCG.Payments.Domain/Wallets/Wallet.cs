@@ -13,6 +13,11 @@ namespace FCG.Payments.Domain.Wallets
             return new Wallet(userId);
         }
 
+        public void AddDeposit(decimal amount)
+        {
+            Balance = Balance.Add(amount);
+        }
+
         private Wallet(Guid userId) : base(Guid.NewGuid())
         {
             UserId = userId;
