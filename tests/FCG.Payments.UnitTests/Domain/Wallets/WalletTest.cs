@@ -96,5 +96,69 @@ namespace FCG.Payments.UnitTests.Domain.Wallets
             wallet.CreatedAt.Should().NotBe(default(DateTime));
             wallet.UpdatedAt.Should().Be(default(DateTime));
         }
+
+        [Fact]
+        public void Given_ValidAmount_When_AddDeposit_Then_ShouldIncreaseBalance()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var initialBalance = wallet.Balance.Value;
+            var depositAmount = 500m;
+
+            // Act
+            wallet.AddDeposit(depositAmount);
+
+            // Assert
+            wallet.Balance.Value.Should().Be(initialBalance + depositAmount);
+        }
+
+        [Fact]
+        public void Given_NegativeAmount_When_AddDeposit_Then_ShouldThrowDomainException()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var negativeAmount = -100m;
+
+            // Act
+            var act = () => wallet.AddDeposit(negativeAmount);
+
+            // Assert
+            act.Should().Throw<Exception>()
+                .WithMessage("Cannot add negative amount to balance");
+        }
+
+        [Fact]
+        public void Given_ZeroAmount_When_AddDeposit_Then_ShouldNotChangeBalance()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var initialBalance = wallet.Balance.Value;
+            var zeroAmount = 0m;
+
+            // Act
+            wallet.AddDeposit(zeroAmount);
+
+            // Assert
+            wallet.Balance.Value.Should().Be(initialBalance);
+        }
+
+        [Fact]
+        public void Given_MultipleDeposits_When_AddDeposit_Then_ShouldAccumulateCorrectly()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var initialBalance = wallet.Balance.Value;
+            var deposit1 = 100m;
+            var deposit2 = 200m;
+            var deposit3 = 300m;
+
+            // Act
+            wallet.AddDeposit(deposit1);
+            wallet.AddDeposit(deposit2);
+            wallet.AddDeposit(deposit3);
+
+            // Assert
+            wallet.Balance.Value.Should().Be(initialBalance + deposit1 + deposit2 + deposit3);
+        }
     }
 }
