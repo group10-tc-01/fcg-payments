@@ -2,6 +2,6 @@
 {
     public interface IWriteOnlyWalletRepository
     {
-        public Task AddDepositAync(Guid walletId, decimal amount);
+        public Task AddDepositAsync(Guid walletId, decimal amount);
     }
 }

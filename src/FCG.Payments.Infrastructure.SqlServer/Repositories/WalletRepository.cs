@@ -21,9 +21,9 @@ namespace FCG.Payments.Infrastructure.SqlServer.Repositories
                 .FirstOrDefaultAsync(w => w.Id == walletId, cancellationToken);
         }
 
-        public async Task AddDepositAync(Guid walletId, decimal amount)
+        public async Task AddDepositAsync(Guid walletId, decimal amount)
         {
-            var wallet = await _context.Wallet.FindAsync(walletId);
+            var wallet = await _context.Wallet.FindAsync(new object[] { walletId }, CancellationToken.None);
 
             if (wallet is null)
                 throw new InvalidOperationException("Wallet not found");

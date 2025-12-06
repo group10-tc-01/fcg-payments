@@ -28,13 +28,13 @@ namespace FCG.Payments.Application.UseCases.Wallets.Deposit
             if (wallet is null)
                 throw new DomainException("Wallet not found");
 
-            await _writeOnlyWalletRepository.AddDepositAync(request.WalletId, request.Amount);
+            await _writeOnlyWalletRepository.AddDepositAsync(request.WalletId, request.Amount);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var updatedWallet = await _readOnlyWalletRepository.GetByIdAsync(request.WalletId, cancellationToken);
 
-            return new DepositResponse(updatedWallet!.Id, updatedWallet.Balance);
+            return new DepositResponse(updatedWallet!.Id, updatedWallet.Balance.Value);
         }
     }
 }
