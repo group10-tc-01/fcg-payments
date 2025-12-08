@@ -35,6 +35,7 @@ namespace FCG.Payments.Application.UseCases.Payments.ProcessPayment
             if (wallet == null)
             {
                 _logger.LogWarning("Wallet not found for UserId: {UserId}", request.UserId);
+
                 throw new NotFoundException($"Wallet not found for UserId: {request.UserId}");
             }
 

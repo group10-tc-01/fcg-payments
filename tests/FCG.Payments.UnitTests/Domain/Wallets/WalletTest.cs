@@ -96,5 +96,47 @@ namespace FCG.Payments.UnitTests.Domain.Wallets
             wallet.CreatedAt.Should().NotBe(default(DateTime));
             wallet.UpdatedAt.Should().Be(default(DateTime));
         }
+
+        [Fact]
+        public void Given_ValidAmount_When_TryDebit_ShouldReturnTrue()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var amountToDebit = 200m;
+
+            // Act
+            var result = wallet.TryDebit(amountToDebit);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Given_InvalidAmount_When_TryDebit_ShouldReturnFalse()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var amountToDebit = -4m;
+
+            // Act
+            var result = wallet.TryDebit(amountToDebit);
+
+            // Assert
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Given_InsufficientBalance_When_TryDebit_ShouldReturnFalse()
+        {
+            // Arrange
+            var wallet = new WalletBuilder().Build();
+            var amountToDebit = 2000m;
+
+            // Act
+            var result = wallet.TryDebit(amountToDebit);
+
+            // Assert
+            result.Should().BeFalse();
+        }
     }
 }

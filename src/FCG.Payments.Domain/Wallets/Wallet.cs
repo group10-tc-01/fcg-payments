@@ -15,7 +15,7 @@ namespace FCG.Payments.Domain.Wallets
 
         public bool TryDebit(decimal amount)
         {
-            if (amount < 0)
+            if (amount <= 0)
                 return false;
 
             var newValue = Balance - amount;
