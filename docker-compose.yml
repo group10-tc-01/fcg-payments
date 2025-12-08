@@ -36,7 +36,7 @@ services:
         build:
             context: .
             dockerfile: src/FCG.Payments.WebApi/Dockerfile
-        container_name: fcg
+        container_name: fcg-payments
         depends_on:
             sqlserver:
                 condition: service_healthy

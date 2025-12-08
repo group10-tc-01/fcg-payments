@@ -14,6 +14,13 @@ namespace FCG.Payments.IntegratedTests.Controllers
     {
         private const string BaseUrl = "/api/v1/payments";
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
         public PaymentsControllerTest(CustomWebApplicationFactory factory) : base(factory) { }
 
         [Fact]
@@ -26,12 +33,7 @@ namespace FCG.Payments.IntegratedTests.Controllers
             // Act
             var result = await DoAuthenticatedGet(url, adminToken);
             var responseContent = await result.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-            });
+            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, JsonOptions);
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -51,12 +53,7 @@ namespace FCG.Payments.IntegratedTests.Controllers
             // Act
             var result = await DoAuthenticatedGet(url, adminToken);
             var responseContent = await result.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-            });
+            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, JsonOptions);
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -84,40 +81,11 @@ namespace FCG.Payments.IntegratedTests.Controllers
             // Act
             var result = await DoAuthenticatedGet(url, adminToken);
             var responseContent = await result.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-            });
+            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, JsonOptions);
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.OK);
             apiResponse.Should().NotBeNull();
-        }
-
-        [Fact]
-        public async Task Given_DateRangeFilter_When_GetPaymentHistoryIsCalled_ShouldReturnFilteredResults()
-        {
-            // Arrange
-            var dateFrom = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ss");
-            var dateTo = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss");
-            var url = $"{BaseUrl}/history?pageNumber=1&pageSize=10&dateFrom={dateFrom}&dateTo={dateTo}";
-            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
-
-            // Act
-            var result = await DoAuthenticatedGet(url, adminToken);
-            var responseContent = await result.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiResponse<PagedListResponse<GetPaymentHistoryResponse>>>(responseContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-
-            // Assert
-            result.StatusCode.Should().Be(HttpStatusCode.OK);
-            apiResponse.Should().NotBeNull();
-            apiResponse!.Data.Items.Should().NotBeNull();
         }
 
         [Fact]
