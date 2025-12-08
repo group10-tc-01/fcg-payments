@@ -28,7 +28,7 @@ namespace FCG.Payments.WebApi.DependencyInjection
         {
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "FCG.Users - V1", Version = "v1.0" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "FCG.Payments - V1", Version = "v1.0" });
 
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
