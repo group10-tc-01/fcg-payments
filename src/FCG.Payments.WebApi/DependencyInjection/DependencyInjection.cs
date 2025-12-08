@@ -3,6 +3,7 @@ using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using FCG.Payments.WebApi.Filters;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FCG.Payments.WebApi.DependencyInjection
@@ -57,6 +58,11 @@ namespace FCG.Payments.WebApi.DependencyInjection
                         new List<string>()
                     }
                 });
+
+                c.SchemaGeneratorOptions = new SchemaGeneratorOptions
+                {
+                    UseAllOfForInheritance = true
+                };
             });
         }
 

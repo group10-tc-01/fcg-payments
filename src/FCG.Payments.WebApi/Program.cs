@@ -7,6 +7,7 @@ using FCG.Payments.WebApi.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace FCG.Payments.WebApi
 {
@@ -19,7 +20,12 @@ namespace FCG.Payments.WebApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                   .AddJsonOptions(options =>
+                   {
+                       options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                   });
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHttpContextAccessor();

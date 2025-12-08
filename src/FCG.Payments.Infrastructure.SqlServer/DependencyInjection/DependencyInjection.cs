@@ -35,6 +35,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.DependencyInjection
             services.AddScoped<IReadOnlyWalletRepository, WalletRepository>();
 
             services.AddScoped<IWriteOnlyPaymentRepository, PaymentRepository>();
+            services.AddScoped<IReadOnlyPaymentRepository, PaymentRepository>();
 
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgPaymentDbContext>());
         }
