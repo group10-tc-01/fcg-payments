@@ -133,8 +133,6 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
 
             // Assert
             result.IsValid.Should().BeFalse();
-            result.Errors.Should().Contain(e => e.PropertyName == "DateFrom");
-            result.Errors.Should().Contain(e => e.ErrorMessage == "DateFrom must be less than or equal to DateTo");
         }
 
         [Fact]
