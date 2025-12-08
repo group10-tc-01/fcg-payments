@@ -2,6 +2,7 @@
 {
     public interface IWriteOnlyWalletRepository
     {
-        public Task AddDepositAync(Guid walletId, decimal amount);
+        Task AddAsync(Wallet wallet, CancellationToken cancellationToken = default);
+        Task AddDepositAync(Guid walletId, decimal amount);
     }
 }

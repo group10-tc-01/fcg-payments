@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace FCG.Payments.Application.Abstractions.Pagination
 {
+    [ExcludeFromCodeCoverage]
     public sealed record PagedListResponse<T>
     {
         public IReadOnlyList<T> Items { get; init; }

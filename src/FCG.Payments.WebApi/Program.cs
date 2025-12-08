@@ -1,5 +1,6 @@
 using FCG.Payments.Application.DependencyInjection;
 using FCG.Payments.Infrastructure.Auth.DependencyInjection;
+using FCG.Payments.Infrastructure.Kafka.DependencyInjection;
 using FCG.Payments.Infrastructure.SqlServer.DependencyInjection;
 using FCG.Payments.WebApi.DependencyInjection;
 using FCG.Payments.WebApi.Extensions;
@@ -27,6 +28,7 @@ namespace FCG.Payments.WebApi
             builder.Services.AddApplication();
             builder.Services.AddSqlServerInfrastructure(builder.Configuration);
             builder.Services.AddAuthInfrastruture(builder.Configuration);
+            builder.Services.AddKafkaInfrastructure(builder.Configuration);
 
             var app = builder.Build();
 

@@ -144,9 +144,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.Migrations
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<decimal>("Value")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("decimal(18,2)")
-                                .HasDefaultValue(1000.00m)
                                 .HasColumnName("Balance");
 
                             b1.HasKey("WalletId");

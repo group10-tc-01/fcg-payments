@@ -1,5 +1,8 @@
-﻿namespace FCG.Payments.Application.Abstractions.Pagination
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace FCG.Payments.Application.Abstractions.Pagination
 {
+    [ExcludeFromCodeCoverage]
     public sealed record PaginationParams
     {
         private const int MinPageNumber = 1;

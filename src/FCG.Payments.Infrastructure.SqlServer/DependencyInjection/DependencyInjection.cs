@@ -1,5 +1,8 @@
 ﻿using FCG.Payments.Domain.Abstractions;
+using FCG.Payments.Domain.Payments;
+using FCG.Payments.Domain.Wallets;
 using FCG.Payments.Infrastructure.SqlServer.Persistance;
+using FCG.Payments.Infrastructure.SqlServer.Persistance.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +31,10 @@ namespace FCG.Payments.Infrastructure.SqlServer.DependencyInjection
 
         private static void AddRepositories(this IServiceCollection services)
         {
+            services.AddScoped<IWriteOnlyWalletRepository, WalletRepository>();
+            services.AddScoped<IReadOnlyWalletRepository, WalletRepository>();
+
+            services.AddScoped<IWriteOnlyPaymentRepository, PaymentRepository>();
 
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgPaymentDbContext>());
         }

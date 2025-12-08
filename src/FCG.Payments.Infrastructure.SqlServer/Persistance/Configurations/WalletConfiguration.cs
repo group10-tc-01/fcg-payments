@@ -25,8 +25,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance.Configurations
                 balanceBuilder.Property(b => b.Value)
                     .HasColumnName("Balance")
                     .HasColumnType("decimal(18,2)")
-                    .IsRequired()
-                    .HasDefaultValue(1000.00m);
+                    .IsRequired();
             });
 
             builder.ToTable(t => t.HasCheckConstraint("CK_Wallet_Balance", "[Balance] >= 0"));
