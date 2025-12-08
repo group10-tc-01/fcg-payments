@@ -2,6 +2,6 @@
 {
     public interface IReadOnlyWalletRepository
     {
-        public Task<Wallet?> GetByIdAsync(Guid walletId, CancellationToken cancellationToken = default);
+        Task<Wallet?> GetByIdAsync(Guid walletId, CancellationToken cancellationToken = default);
     }
 }

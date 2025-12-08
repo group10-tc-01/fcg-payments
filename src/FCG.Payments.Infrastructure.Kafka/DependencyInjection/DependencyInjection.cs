@@ -1,0 +1,21 @@
+using FCG.Payments.Infrastructure.Kafka.Consumers.OrderPlaced;
+using FCG.Payments.Infrastructure.Kafka.Consumers.UserCreated;
+using FCG.Payments.Infrastructure.Kafka.Settings;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace FCG.Payments.Infrastructure.Kafka.DependencyInjection
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddKafkaInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<KafkaSettings>(configuration.GetSection("KafkaSettings"));
+
+            services.AddHostedService<UserCreatedConsumer>();
+            services.AddHostedService<OrderPlacedConsumer>();
+
+            return services;
+        }
+    }
+}

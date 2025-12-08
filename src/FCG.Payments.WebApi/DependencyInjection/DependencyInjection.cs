@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using FCG.Payments.WebApi.Filters;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -13,7 +14,7 @@ namespace FCG.Payments.WebApi.DependencyInjection
         {
             services.AddVersioning();
             services.AddFilters();
-            //services.AddHealthChecks().AddDbContextCheck<FcgUserDbContext>();
+            services.AddHealthChecks().AddDbContextCheck<FcgPaymentDbContext>();
             services.AddRouting(options => options.LowercaseUrls = true);
             services.AddSwaggerConfiguration();
             services.AddSerilogLogging(configuration);
