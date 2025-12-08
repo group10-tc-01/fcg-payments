@@ -21,6 +21,11 @@
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\FCG.Payments.WebApi\FCG.Payments.WebApi.csproj" />
+	  <ProjectReference Include="..\FCG.Payments.CommomTestUtilities\FCG.Payments.CommomTestUtilities.csproj" />
+	</ItemGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
