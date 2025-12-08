@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fcg-payments-config
+  namespace: fcg-payments
+data:
+  # Logging Configuration
+  Logging__LogLevel__Default: "Information"
+  Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+  
+  # Serilog Configuration
+  Serilog__MinimumLevel__Default: "Information"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__MinimumLevel__Override__Microsoft.Hosting.Lifetime: "Information"
+  
+  # JWT Configuration (non-sensitive)
+  JwtSettings__Issuer: "FCG-User"
+  JwtSettings__Audience: "FCG-Client"
+  JwtSettings__AccessTokenExpirationMinutes: "60"
+  JwtSettings__RefreshTokenExpirationDays: "7"
+  
+  # Kafka Configuration
+  KafkaSettings__BootstrapServers: "kafka-service:9092"
+  KafkaSettings__Topics__UserCreated: "user-created"
+  KafkaSettings__Topics__OrderPlaced: "order-placed"
+  KafkaSettings__Topics__PaymentProcessed: "payment-processed"
+
+  # Serilog Seq Configuration
+  Serilog__WriteTo__1__Args__serverUrl: "http://seq-service:5341"
+  
+  # ASP.NET Core Configuration
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
