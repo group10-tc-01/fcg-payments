@@ -10,6 +10,7 @@ namespace FCG.Payments.Infrastructure.Kafka.DependencyInjection
     {
         public static IServiceCollection AddKafkaInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+
             services.Configure<KafkaSettings>(configuration.GetSection("KafkaSettings"));
 
             services.AddHostedService<UserCreatedConsumer>();
