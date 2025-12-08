@@ -17,14 +17,9 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance.Repositories
             await _fcgPaymentDbContext.Wallet.AddAsync(wallet, cancellationToken);
         }
 
-        public Task AddDepositAync(Guid walletId, decimal amount)
+        public async Task<Wallet?> GetByIdAsync(Guid walletId, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<Wallet?> GetByIdAsync(Guid walletId, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
+            return await _fcgPaymentDbContext.Wallet.FirstOrDefaultAsync(w => w.Id == walletId, cancellationToken);
         }
 
         public async Task<Wallet?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
