@@ -1,10 +1,12 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace FCG.Payments.Infrastructure.Kafka.Abstractions
 {
+    [ExcludeFromCodeCoverage]
     public abstract class BaseKafkaConsumer<TEvent> : BackgroundService, IKafkaConsumer where TEvent : class
     {
         private readonly ILogger<BaseKafkaConsumer<TEvent>> _logger;
