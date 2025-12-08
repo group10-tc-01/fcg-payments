@@ -1,4 +1,5 @@
 using FCG.Payments.Domain.Exceptions;
+using System.Globalization;
 
 namespace FCG.Payments.Domain.Wallets.ValueObjects
 {
@@ -42,6 +43,6 @@ namespace FCG.Payments.Domain.Wallets.ValueObjects
         public static implicit operator decimal(Balance balance) => balance.Value;
         public static implicit operator Balance(decimal value) => Create(value);
 
-        public override string ToString() => Value.ToString("C");
+        public override string ToString() => Value.ToString("C", new CultureInfo("pt-BR"));
     }
 }

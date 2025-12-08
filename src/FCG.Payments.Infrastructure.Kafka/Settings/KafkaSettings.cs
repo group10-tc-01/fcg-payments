@@ -12,5 +12,6 @@ namespace FCG.Payments.Infrastructure.Kafka.Settings
     {
         public string UserCreated { get; set; } = string.Empty;
         public string OrderPlaced { get; set; } = string.Empty;
+        public string PaymentProcessed { get; set; } = string.Empty;
     }
 }

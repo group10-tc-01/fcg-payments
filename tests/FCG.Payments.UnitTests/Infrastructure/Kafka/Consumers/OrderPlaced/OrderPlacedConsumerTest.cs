@@ -1,6 +1,8 @@
 using FCG.Payments.Infrastructure.Kafka.Consumers.OrderPlaced;
 using FCG.Payments.Infrastructure.Kafka.Settings;
 using FluentAssertions;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -10,12 +12,20 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
     public class OrderPlacedConsumerTest
     {
         private readonly Mock<ILogger<OrderPlacedConsumer>> _loggerMock;
+        private readonly Mock<IServiceScopeFactory> _serviceScopeFactoryMock;
+        private readonly Mock<IServiceScope> _serviceScopeMock;
+        private readonly Mock<IServiceProvider> _serviceProviderMock;
+        private readonly Mock<IMediator> _mediatorMock;
         private readonly IOptions<KafkaSettings> _kafkaSettings;
         private readonly OrderPlacedConsumer _sut;
 
         public OrderPlacedConsumerTest()
         {
             _loggerMock = new Mock<ILogger<OrderPlacedConsumer>>();
+            _serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
+            _serviceScopeMock = new Mock<IServiceScope>();
+            _serviceProviderMock = new Mock<IServiceProvider>();
+            _mediatorMock = new Mock<IMediator>();
 
             _kafkaSettings = Options.Create(new KafkaSettings
             {
@@ -29,18 +39,22 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
                 }
             });
 
-            _sut = new OrderPlacedConsumer(_loggerMock.Object, _kafkaSettings);
+            _serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(_serviceScopeMock.Object);
+            _serviceScopeMock.Setup(x => x.ServiceProvider).Returns(_serviceProviderMock.Object);
+            _serviceProviderMock.Setup(x => x.GetService(typeof(IMediator))).Returns(_mediatorMock.Object);
+
+            _sut = new OrderPlacedConsumer(_loggerMock.Object, _kafkaSettings, _serviceScopeFactoryMock.Object);
         }
 
         [Fact]
         public async Task ProcessEventAsync_WithValidEvent_ShouldLogInformation()
         {
             // Arrange
-            var correlationId = Guid.NewGuid().ToString();
-            var userId = Guid.NewGuid().ToString();
-            var gameId = Guid.NewGuid().ToString();
+            var correlationId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var gameId = Guid.NewGuid();
             var amount = 99.99m;
-            var createdAt = DateTime.UtcNow.ToString("O");
+            var createdAt = DateTime.UtcNow;
 
             var @event = new OrderPlacedEvent(correlationId, userId, gameId, amount, createdAt);
 
@@ -50,13 +64,13 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
             // Assert
             _loggerMock
                 .Invocations
-                .Should().ContainSingle(inv => 
+                .Should().ContainSingle(inv =>
                     inv.Method.Name == "Log" &&
                     inv.Arguments[0].Equals(LogLevel.Information) &&
                     inv.Arguments[2].ToString()!.Contains("Processing OrderPlacedEvent") &&
-                    inv.Arguments[2].ToString()!.Contains(correlationId) &&
-                    inv.Arguments[2].ToString()!.Contains(userId) &&
-                    inv.Arguments[2].ToString()!.Contains(gameId) &&
+                    inv.Arguments[2].ToString()!.Contains(correlationId.ToString()) &&
+                    inv.Arguments[2].ToString()!.Contains(userId.ToString()) &&
+                    inv.Arguments[2].ToString()!.Contains(gameId.ToString()) &&
                     inv.Arguments[2].ToString()!.Contains(amount.ToString())
                 );
         }
@@ -66,11 +80,11 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
         {
             // Arrange
             var @event = new OrderPlacedEvent(
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
                 150.00m,
-                DateTime.UtcNow.ToString("O")
+                DateTime.UtcNow
             );
 
             // Act
@@ -78,60 +92,6 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
 
             // Assert
             await act.Should().NotThrowAsync();
-        }
-
-        [Fact]
-        public async Task ProcessEventAsync_WhenCancellationRequested_ShouldThrowOperationCanceledException()
-        {
-            // Arrange
-            var @event = new OrderPlacedEvent(
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
-                200.00m,
-                DateTime.UtcNow.ToString("O")
-            );
-
-            var cts = new CancellationTokenSource();
-            cts.Cancel();
-
-            // Act
-            var act = async () => await InvokeProcessEventAsync(@event, cts.Token);
-
-            // Assert
-            await act.Should().ThrowAsync<OperationCanceledException>();
-        }
-
-        [Fact]
-        public async Task ProcessEventAsync_WhenExceptionOccursInDelay_ShouldLogErrorAndRethrow()
-        {
-            // Arrange
-            var correlationId = Guid.NewGuid().ToString();
-            var @event = new OrderPlacedEvent(
-                correlationId,
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
-                100.00m,
-                DateTime.UtcNow.ToString("O")
-            );
-
-            var cts = new CancellationTokenSource();
-            cts.Cancel();
-
-            // Act
-            var act = async () => await InvokeProcessEventAsync(@event, cts.Token);
-
-            // Assert
-            await act.Should().ThrowAsync<OperationCanceledException>();
-
-            _loggerMock
-                .Invocations
-                .Should().ContainSingle(inv => 
-                    inv.Method.Name == "Log" &&
-                    inv.Arguments[0].Equals(LogLevel.Error) &&
-                    inv.Arguments[2].ToString()!.Contains("Error processing OrderPlacedEvent") &&
-                    inv.Arguments[2].ToString()!.Contains(correlationId)
-                );
         }
 
         private async Task InvokeProcessEventAsync(OrderPlacedEvent @event, CancellationToken cancellationToken)

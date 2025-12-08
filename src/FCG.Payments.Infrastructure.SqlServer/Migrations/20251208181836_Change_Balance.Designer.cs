@@ -4,6 +4,7 @@ using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FCG.Payments.Infrastructure.SqlServer.Migrations
 {
     [DbContext(typeof(FcgPaymentDbContext))]
-    partial class FcgPaymentDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251208181836_Change_Balance")]
+    partial class Change_Balance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

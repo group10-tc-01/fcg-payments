@@ -29,7 +29,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance.Repositories
 
         public async Task<Wallet?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
         {
-            return await _fcgPaymentDbContext.Wallet.AsNoTracking().FirstOrDefaultAsync(w => w.UserId == userId, cancellationToken);
+            return await _fcgPaymentDbContext.Wallet.FirstOrDefaultAsync(w => w.UserId == userId, cancellationToken);
         }
     }
 }
