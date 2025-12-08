@@ -1,4 +1,5 @@
 ﻿using FCG.Payments.Domain.Abstractions;
+using FCG.Payments.Domain.Exceptions;
 using FCG.Payments.Domain.Wallets.ValueObjects;
 
 namespace FCG.Payments.Domain.Wallets
@@ -27,6 +28,15 @@ namespace FCG.Payments.Domain.Wallets
             UpdatedAt = DateTime.UtcNow;
 
             return true;
+        }
+
+        public void AddBalance(decimal amount)
+        {
+            if (amount < 0)
+                throw new DomainException("Cannot add negative amount to balance");
+
+            Balance += amount;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         private Wallet(Guid userId) : base(Guid.NewGuid())
