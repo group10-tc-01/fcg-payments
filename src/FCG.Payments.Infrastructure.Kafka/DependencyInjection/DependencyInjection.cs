@@ -5,10 +5,12 @@ using FCG.Payments.Infrastructure.Kafka.Producers;
 using FCG.Payments.Infrastructure.Kafka.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace FCG.Payments.Infrastructure.Kafka.DependencyInjection
 {
+    [ExcludeFromCodeCoverage]
     public static class DependencyInjection
     {
         public static IServiceCollection AddKafkaInfrastructure(this IServiceCollection services, IConfiguration configuration)
