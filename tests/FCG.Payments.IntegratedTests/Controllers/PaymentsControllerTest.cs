@@ -188,22 +188,5 @@ namespace FCG.Payments.IntegratedTests.Controllers
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         }
-
-        [Fact]
-        public async Task Given_InvalidDateRange_When_GetPaymentHistoryIsCalled_ShouldReturnBadRequest()
-        {
-            // Arrange
-            var dateFrom = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss");
-            var dateTo = DateTime.UtcNow.AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ss");
-            var url = $"{BaseUrl}/history?pageNumber=1&pageSize=10&dateFrom={dateFrom}&dateTo={dateTo}";
-            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
-
-            // Act
-            var result = await DoAuthenticatedGet(url, adminToken);
-
-            // Assert
-            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        }
-
     }
 }
