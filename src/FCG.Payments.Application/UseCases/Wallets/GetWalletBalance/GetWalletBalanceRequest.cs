@@ -2,5 +2,5 @@
 
 namespace FCG.Payments.Application.UseCases.Wallets.GetWalletBalance
 {
-    public record GetWalletBalanceRequest(Guid Id) : ICommand<GetWalletBalanceResponse>;
+    public record GetWalletBalanceRequest(Guid Id) : IQuery<GetWalletBalanceResponse>;
 }
