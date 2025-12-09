@@ -2,5 +2,5 @@
 
 namespace FCG.Payments.Application.UseCases.Wallets.GetWalletBalance
 {
-    public interface IGetWalletBalanceUseCase : ICommandHandler<GetWalletBalanceRequest, GetWalletBalanceResponse> { }
+    public interface IGetWalletBalanceUseCase : IQueryHandler<GetWalletBalanceRequest, GetWalletBalanceResponse> { }
 }
