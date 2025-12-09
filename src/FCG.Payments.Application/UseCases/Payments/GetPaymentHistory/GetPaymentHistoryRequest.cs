@@ -9,5 +9,5 @@ namespace FCG.Payments.Application.UseCases.Payments.GetPaymentHistory
         int PageSize,
         PaymentStatus? Status,
         DateTime? DateFrom,
-        DateTime? DateTo) : ICommand<PagedListResponse<GetPaymentHistoryResponse>>;
+        DateTime? DateTo) : IQuery<PagedListResponse<GetPaymentHistoryResponse>>;
 }
