@@ -7,6 +7,7 @@ namespace FCG.Payments.Domain.Payments
 {
     public sealed class Payment : BaseEntity
     {
+        public Guid CorrelationId { get; private set; }
         public Guid UserId { get; private set; }
         public Guid GameId { get; private set; }
         public Guid WalletId { get; private set; }
@@ -16,9 +17,9 @@ namespace FCG.Payments.Domain.Payments
         public DateTime? ProcessedAt { get; private set; }
         public Wallet Wallet { get; } = null!;
 
-        public static Payment CreatePayment(Guid userId, Guid gameId, Guid walletId, decimal amount)
+        public static Payment CreatePayment(Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount)
         {
-            return new Payment(userId, gameId, walletId, amount);
+            return new Payment(correlationId, userId, gameId, walletId, amount);
         }
 
         public void Approve()
@@ -26,7 +27,7 @@ namespace FCG.Payments.Domain.Payments
             Status = PaymentStatus.Approved;
             ProcessedAt = DateTime.UtcNow;
 
-            RaiseDomainEvent(new PaymentProcessedEvent(Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
+            RaiseDomainEvent(new PaymentProcessedEvent(CorrelationId, Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
         }
 
         public void Reject(string reason)
@@ -35,11 +36,12 @@ namespace FCG.Payments.Domain.Payments
             FailureReason = reason;
             ProcessedAt = DateTime.UtcNow;
 
-            RaiseDomainEvent(new PaymentProcessedEvent(Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
+            RaiseDomainEvent(new PaymentProcessedEvent(CorrelationId, Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
         }
 
-        private Payment(Guid userId, Guid gameId, Guid walletId, decimal amount) : base(Guid.NewGuid())
+        private Payment(Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount) : base(Guid.NewGuid())
         {
+            CorrelationId = correlationId;
             UserId = userId;
             GameId = gameId;
             WalletId = walletId;

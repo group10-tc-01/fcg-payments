@@ -29,7 +29,7 @@ namespace FCG.Payments.Infrastructure.Kafka.Consumers.OrderPlaced
             {
                 _logger.LogInformation("Processing OrderPlacedEvent. CorrelationId: {CorrelationId}, UserId: {UserId}, GameId: {GameId}, Amount: {Amount}", @event.CorrelationId, @event.UserId, @event.GameId, @event.Amount);
 
-                var request = new ProcessPaymentRequest(@event.UserId, @event.GameId, @event.Amount);
+                var request = new ProcessPaymentRequest(@event.CorrelationId, @event.UserId, @event.GameId, @event.Amount);
 
                 await mediator.Send(request, cancellationToken);
             }
