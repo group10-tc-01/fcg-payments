@@ -13,7 +13,7 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
         private readonly IConsumer<string, string> _consumer;
         private readonly string _topic;
         private readonly int _consumerTimeoutMs;
-        
+
         private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
