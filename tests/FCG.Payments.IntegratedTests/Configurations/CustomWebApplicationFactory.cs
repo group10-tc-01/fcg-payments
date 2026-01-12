@@ -120,6 +120,7 @@ namespace FCG.Payments.IntegratedTests.Configurations
             foreach (var wallet in wallets)
             {
                 var payment = new PaymentBuilder().BuildWithParameters(
+                    Guid.NewGuid(),
                     wallet.UserId,
                     Guid.NewGuid(),
                     wallet.Id,

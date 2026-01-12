@@ -159,7 +159,7 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             var gameId = Guid.NewGuid();
             var walletId = Guid.NewGuid();
             var amount = 100m;
-            var payment = new PaymentBuilder().BuildWithParameters(userId, gameId, walletId, amount);
+            var payment = new PaymentBuilder().BuildWithParameters(Guid.NewGuid(), userId, gameId, walletId, amount);
             var payments = new List<Payment> { payment };
             var totalCount = 1;
 
