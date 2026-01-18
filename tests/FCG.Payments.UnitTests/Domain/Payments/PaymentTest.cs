@@ -16,7 +16,7 @@ namespace FCG.Payments.UnitTests.Domain.Payments
             var amount = 100.50m;
 
             // Act
-            var payment = Payment.CreatePayment(userId, gameId, walletId, amount);
+            var payment = Payment.CreatePayment(Guid.NewGuid(), userId, gameId, walletId, amount);
 
             // Assert
             payment.Should().NotBeNull();
@@ -76,8 +76,8 @@ namespace FCG.Payments.UnitTests.Domain.Payments
             var amount = 50m;
 
             // Act
-            var payment1 = Payment.CreatePayment(userId1, gameId, walletId, amount);
-            var payment2 = Payment.CreatePayment(userId2, gameId, walletId, amount);
+            var payment1 = Payment.CreatePayment(Guid.NewGuid(), userId1, gameId, walletId, amount);
+            var payment2 = Payment.CreatePayment(Guid.NewGuid(), userId2, gameId, walletId, amount);
 
             // Assert
             payment1.Id.Should().NotBe(payment2.Id);
@@ -155,7 +155,7 @@ namespace FCG.Payments.UnitTests.Domain.Payments
             var gameId = Guid.NewGuid();
             var walletId = Guid.NewGuid();
             var amount = 250m;
-            var payment = Payment.CreatePayment(userId, gameId, walletId, amount);
+            var payment = Payment.CreatePayment(Guid.NewGuid(), userId, gameId, walletId, amount);
 
             // Act & Assert
             payment.Id.Should().NotBe(Guid.Empty);

@@ -14,6 +14,9 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance.Configurations
 
             builder.ToTable("Payment");
 
+            builder.Property(p => p.CorrelationId)
+                .IsRequired();
+
             builder.Property(p => p.UserId)
                 .IsRequired();
 

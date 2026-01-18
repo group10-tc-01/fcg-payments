@@ -14,6 +14,10 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
         private readonly string _topic;
         private readonly int _consumerTimeoutMs;
 
+        private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
         protected BaseKafkaConsumer(ILogger<BaseKafkaConsumer<TEvent>> logger, string bootstrapServers, string groupId, string topic, int consumerTimeoutMs = 100)
         {
             _logger = logger;
@@ -64,7 +68,7 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
                     {
                         _logger.LogInformation("Message received from topic {Topic}: {Message}", _topic, consumeResult.Message.Value);
 
-                        var @event = JsonSerializer.Deserialize<TEvent>(consumeResult.Message.Value);
+                        var @event = JsonSerializer.Deserialize<TEvent>(consumeResult.Message.Value, _jsonOptions);
 
                         if (@event != null)
                         {

@@ -39,7 +39,7 @@ namespace FCG.Payments.Application.UseCases.Payments.ProcessPayment
                 throw new NotFoundException($"Wallet not found for UserId: {request.UserId}");
             }
 
-            var payment = Payment.CreatePayment(request.UserId, request.GameId, wallet.Id, request.Amount);
+            var payment = Payment.CreatePayment(request.CorrelationId, request.UserId, request.GameId, wallet.Id, request.Amount);
 
             _logger.LogInformation("Wallet balance before debit: {Balance}", wallet.Balance);
 
@@ -65,7 +65,7 @@ namespace FCG.Payments.Application.UseCases.Payments.ProcessPayment
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ProcessPaymentResponse(payment.Id, payment.UserId, payment.GameId, payment.Amount, payment.Status);
+            return new ProcessPaymentResponse(payment.CorrelationId, payment.Id, payment.UserId, payment.GameId, payment.Amount, payment.Status);
         }
     }
 }
