@@ -31,6 +31,7 @@ namespace FCG.Payments.Infrastructure.Kafka.EventHandlers
             _logger.LogInformation("Processing PaymentProcessedEvent for UserId {UserId}", domainEvent.UserId);
 
             var message = new PaymentProcessedMessage(
+                UserEmail: domainEvent.UserEmail,
                 CorrelationId: domainEvent.CorrelationId,
                 PaymentId: domainEvent.PaymentId,
                 UserId: domainEvent.UserId,
