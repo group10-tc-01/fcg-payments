@@ -7,6 +7,7 @@ namespace FCG.Payments.Domain.Payments
 {
     public sealed class Payment : BaseEntity
     {
+        public string UserEmail { get; private set; } = null!;
         public Guid CorrelationId { get; private set; }
         public Guid UserId { get; private set; }
         public Guid GameId { get; private set; }
@@ -17,9 +18,9 @@ namespace FCG.Payments.Domain.Payments
         public DateTime? ProcessedAt { get; private set; }
         public Wallet Wallet { get; } = null!;
 
-        public static Payment CreatePayment(Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount)
+        public static Payment CreatePayment(string userEmail, Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount)
         {
-            return new Payment(correlationId, userId, gameId, walletId, amount);
+            return new Payment(userEmail, correlationId, userId, gameId, walletId, amount);
         }
 
         public void Approve()
@@ -27,7 +28,7 @@ namespace FCG.Payments.Domain.Payments
             Status = PaymentStatus.Approved;
             ProcessedAt = DateTime.UtcNow;
 
-            RaiseDomainEvent(new PaymentProcessedEvent(CorrelationId, Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
+            RaiseDomainEvent(new PaymentProcessedEvent(UserEmail, CorrelationId, Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
         }
 
         public void Reject(string reason)
@@ -36,11 +37,12 @@ namespace FCG.Payments.Domain.Payments
             FailureReason = reason;
             ProcessedAt = DateTime.UtcNow;
 
-            RaiseDomainEvent(new PaymentProcessedEvent(CorrelationId, Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
+            RaiseDomainEvent(new PaymentProcessedEvent(UserEmail, CorrelationId, Id, UserId, GameId, Amount, Status, ProcessedAt.Value));
         }
 
-        private Payment(Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount) : base(Guid.NewGuid())
+        private Payment(string userEmail, Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount) : base(Guid.NewGuid())
         {
+            UserEmail = userEmail;
             CorrelationId = correlationId;
             UserId = userId;
             GameId = gameId;
