@@ -56,7 +56,7 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
             var amount = 99.99m;
             var createdAt = DateTime.UtcNow;
 
-            var @event = new OrderPlacedEvent(correlationId, userId, gameId, amount, createdAt);
+            var @event = new OrderPlacedEvent("teste@gmail.com", correlationId, userId, gameId, amount, createdAt);
 
             // Act
             await InvokeProcessEventAsync(@event, CancellationToken.None);
@@ -80,6 +80,7 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
         {
             // Arrange
             var @event = new OrderPlacedEvent(
+                "teste@gmail.com",
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 Guid.NewGuid(),

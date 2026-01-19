@@ -9,6 +9,7 @@ namespace FCG.Payments.CommomTestUtilities.Builders.Payments
         {
             return new Faker<Payment>()
                 .CustomInstantiator(f => Payment.CreatePayment(
+                    f.Internet.Email(),
                     Guid.NewGuid(),
                     Guid.NewGuid(),
                     Guid.NewGuid(),
@@ -17,9 +18,9 @@ namespace FCG.Payments.CommomTestUtilities.Builders.Payments
                 .Generate();
         }
 
-        public Payment BuildWithParameters(Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount)
+        public Payment BuildWithParameters(string userEmail, Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount)
         {
-            return Payment.CreatePayment(correlationId, userId, gameId, walletId, amount);
+            return Payment.CreatePayment(userEmail, correlationId, userId, gameId, walletId, amount);
         }
     }
 }

@@ -14,6 +14,10 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance.Configurations
 
             builder.ToTable("Payment");
 
+            builder.Property(p => p.UserEmail)
+                .HasMaxLength(255)
+                .IsRequired();
+
             builder.Property(p => p.CorrelationId)
                 .IsRequired();
 

@@ -37,7 +37,7 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             var userId = Guid.NewGuid();
             var gameId = Guid.NewGuid();
             var amount = 100m;
-            var request = new ProcessPaymentRequest(Guid.NewGuid(), userId, gameId, amount);
+            var request = new ProcessPaymentRequest("teste@gmail.com", Guid.NewGuid(), userId, gameId, amount);
 
             var wallet = new WalletBuilder().BuildWithUserId(userId);
             ReadOnlyWalletRepositoryBuilder.SetupGetByUserIdAsync(userId, wallet);
@@ -61,7 +61,7 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             var userId = Guid.NewGuid();
             var gameId = Guid.NewGuid();
             var amount = 5000m;
-            var request = new ProcessPaymentRequest(Guid.NewGuid(), userId, gameId, amount);
+            var request = new ProcessPaymentRequest("teste@gmail.com", Guid.NewGuid(), userId, gameId, amount);
 
             var wallet = new WalletBuilder().BuildWithUserId(userId);
             ReadOnlyWalletRepositoryBuilder.SetupGetByUserIdAsync(userId, wallet);
@@ -85,7 +85,7 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             var userId = Guid.NewGuid();
             var gameId = Guid.NewGuid();
             var amount = 100m;
-            var request = new ProcessPaymentRequest(Guid.NewGuid(), userId, gameId, amount);
+            var request = new ProcessPaymentRequest("teste@gmail.com", Guid.NewGuid(), userId, gameId, amount);
 
             ReadOnlyWalletRepositoryBuilder.SetupGetByUserIdAsync(userId, null);
 
