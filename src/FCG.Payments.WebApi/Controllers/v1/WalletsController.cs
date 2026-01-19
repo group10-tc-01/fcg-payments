@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FCG.Payments.WebApi.Controllers.v1
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     public class WalletsController : FcgPaymentBaseController
     {
