@@ -4,6 +4,22 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      deploy_to_acr:
+        description: 'Fazer push no ACR?'
+        required: true
+        type: boolean
+        default: true
+      confirm_deploy:
+        description: 'Confirmar deploy no Azure Web App?'
+        required: true
+        type: boolean
+        default: false
+      custom_image:
+        description: 'Imagem customizada (ex: fiapcr.azurecr.io/fcg-payments:1.2.3) - deixe vazio para usar latest'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -15,6 +31,10 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      full_image: ${{ steps.image.outputs.full_image }}
     
     steps:
     - name: Checkout code
@@ -40,9 +60,11 @@ jobs:
         echo "tag=$tag" >> $GITHUB_OUTPUT
     
     - name: Setup Docker Buildx
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_acr == 'true' }}
       uses: docker/setup-buildx-action@v3
     
     - name: Login to Azure Container Registry
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_acr == 'true' }}
       uses: azure/docker-login@v1
       with:
         login-server: ${{ env.REGISTRY }}
@@ -50,22 +72,29 @@ jobs:
         password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
     
     - name: Build and push Docker image
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_acr == 'true' }}
+      id: image
       run: |
         IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        FULL_IMAGE="${IMAGE}:${{ steps.version.outputs.version }}"
+        LATEST_IMAGE="${IMAGE}:latest"
         
         docker build \
           --file src/FCG.Payments.WebApi/Dockerfile \
           --build-arg BUILD_CONFIGURATION=Release \
-          -t ${IMAGE}:${{ steps.version.outputs.version }} \
-          -t ${IMAGE}:latest \
+          -t ${FULL_IMAGE} \
+          -t ${LATEST_IMAGE} \
           .
         
-        docker push ${IMAGE}:${{ steps.version.outputs.version }}
-        docker push ${IMAGE}:latest
+        docker push ${FULL_IMAGE}
+        docker push ${LATEST_IMAGE}
         
-        echo "Image pushed: ${IMAGE}:${{ steps.version.outputs.version }}"
+        echo "full_image=${LATEST_IMAGE}" >> $GITHUB_OUTPUT
+        echo "✅ Image pushed: ${FULL_IMAGE}"
+        echo "✅ Image pushed: ${LATEST_IMAGE}"
     
     - name: Create and push tag
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_acr == 'true' }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@payments.noreply.github.com"
@@ -73,8 +102,49 @@ jobs:
         git push origin ${{ steps.version.outputs.tag }}
     
     - name: Create GitHub Release
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_acr == 'true' }}
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.version.outputs.tag }}
         name: Release ${{ steps.version.outputs.version }}
         generate_release_notes: true
+  
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.inputs.confirm_deploy == 'true' }}
+    environment: production
+    
+    steps:
+    - name: Determine image to deploy
+      id: deploy_image
+      run: |
+        if [ "${{ github.event.inputs.custom_image }}" != "" ]; then
+          echo "image=${{ github.event.inputs.custom_image }}" >> $GITHUB_OUTPUT
+          echo "📦 Using custom image: ${{ github.event.inputs.custom_image }}"
+        else
+          echo "image=${{ needs.build-and-push.outputs.full_image }}" >> $GITHUB_OUTPUT
+          echo "📦 Using built image: ${{ needs.build-and-push.outputs.full_image }}"
+        fi
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        images: ${{ steps.deploy_image.outputs.image }}
+    
+    - name: Deployment Success
+      run: |
+        echo "=================================="
+        echo "✅ DEPLOY REALIZADO COM SUCESSO!"
+        echo "=================================="
+        echo ""
+        echo "🚀 Aplicação disponível em:"
+        echo "   https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo ""
+        echo "📦 Imagem deployada:"
+        echo "   ${{ steps.deploy_image.outputs.image }}"
+        echo ""
+        echo "🏷️  Versão: ${{ needs.build-and-push.outputs.version }}"
+        echo "=================================="
