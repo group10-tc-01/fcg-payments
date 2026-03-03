@@ -14,7 +14,15 @@ namespace FCG.Payments.Infrastructure.Kafka.Consumers.OrderPlaced
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public OrderPlacedConsumer(ILogger<OrderPlacedConsumer> logger, IOptions<KafkaSettings> kafkaSettings, IServiceScopeFactory serviceScopeFactory)
-            : base(logger, kafkaSettings.Value.BootstrapServers, kafkaSettings.Value.GroupId, kafkaSettings.Value.Topics.OrderPlaced, kafkaSettings.Value.ConsumerTimeoutMs)
+            : base(
+                logger,
+                kafkaSettings.Value.BootstrapServers,
+                kafkaSettings.Value.GroupId,
+                kafkaSettings.Value.Topics.OrderPlaced,
+                kafkaSettings.Value.UseSaslSsl,
+                kafkaSettings.Value.SaslUsername,
+                kafkaSettings.Value.SaslPassword,
+                kafkaSettings.Value.ConsumerTimeoutMs)
         {
             _logger = logger;
             _serviceScopeFactory = serviceScopeFactory;

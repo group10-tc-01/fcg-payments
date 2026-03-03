@@ -22,7 +22,12 @@ namespace FCG.Payments.Infrastructure.Kafka.DependencyInjection
                 config.RegisterServicesFromAssembly(assembly);
             });
 
-            services.Configure<KafkaSettings>(configuration.GetSection("KafkaSettings"));
+            var kafkaSection = configuration.GetSection("KafkaSettings");
+            var kafkaSettings = kafkaSection.Get<KafkaSettings>() ?? new KafkaSettings();
+
+            ValidateKafkaSettings(kafkaSettings);
+
+            services.Configure<KafkaSettings>(kafkaSection);
 
             services.AddSingleton<IMessageProducer, KafkaMessageProducer>();
 
@@ -30,6 +35,22 @@ namespace FCG.Payments.Infrastructure.Kafka.DependencyInjection
             services.AddHostedService<OrderPlacedConsumer>();
 
             return services;
+        }
+
+        private static void ValidateKafkaSettings(KafkaSettings settings)
+        {
+            if (settings.UseSaslSsl)
+            {
+                if (string.IsNullOrWhiteSpace(settings.SaslUsername))
+                {
+                    throw new InvalidOperationException("KafkaSettings:SaslUsername must be configured when UseSaslSsl is true.");
+                }
+
+                if (string.IsNullOrWhiteSpace(settings.SaslPassword))
+                {
+                    throw new InvalidOperationException("KafkaSettings:SaslPassword must be configured when UseSaslSsl is true.");
+                }
+            }
         }
     }
 }
