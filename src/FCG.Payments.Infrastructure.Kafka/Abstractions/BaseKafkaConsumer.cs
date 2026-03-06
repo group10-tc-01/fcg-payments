@@ -83,7 +83,12 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
 
                     if (consumeResult?.Message?.Value != null)
                     {
-                        _logger.LogInformation("Message received from topic {Topic}: {Message}", _topic, consumeResult.Message.Value);
+                        _logger.LogInformation(
+                            "Message received from topic {Topic}, partition {Partition}, offset {Offset}, event type {EventType}",
+                            _topic,
+                            consumeResult.Partition.Value,
+                            consumeResult.Offset.Value,
+                            typeof(TEvent).Name);
 
                         var @event = JsonSerializer.Deserialize<TEvent>(consumeResult.Message.Value, _jsonOptions);
 

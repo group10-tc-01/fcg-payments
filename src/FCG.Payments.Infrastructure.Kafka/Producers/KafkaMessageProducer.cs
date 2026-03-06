@@ -50,7 +50,11 @@ namespace FCG.Payments.Infrastructure.Kafka.Producers
                     Value = serializedMessage
                 };
 
-                _logger.LogInformation("Producing message {Message} to topic {Topic}", serializedMessage, topic);
+                _logger.LogInformation(
+                    "Producing message to topic {Topic} with key {MessageKey} and type {MessageType}",
+                    topic,
+                    kafkaMessage.Key,
+                    typeof(T).Name);
 
                 var deliveryResult = await _producer.ProduceAsync(topic, kafkaMessage, cancellationToken);
 

@@ -140,11 +140,12 @@ namespace FCG.Payments.WebApi.DependencyInjection
                 .MinimumLevel.Information()
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
+                .Enrich.With(new TraceLogEnricher())
                 .Enrich.WithProperty("Application", observabilityOptions.ServiceName)
                 .Enrich.WithProperty("service.name", observabilityOptions.ServiceName)
                 .Enrich.WithProperty("service.version", observabilityOptions.ServiceVersion)
                 .Enrich.WithProperty("deployment.environment", environmentName)
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] [{trace_id}/{span_id}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.Seq(seqUrl)
                 .CreateLogger();
 
