@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -8,6 +10,8 @@ namespace FCG.Payments.WebApi.Observability
     {
         public const string ActivitySourceName = "FCG.Payments";
         public const string MeterName = "FCG.Payments";
+        public static readonly ActivitySource ActivitySource = new(ActivitySourceName);
+        public static readonly Meter Meter = new(MeterName);
 
         public static ResourceBuilder CreateResourceBuilder(ObservabilityOptions options, string environmentName)
         {
@@ -27,7 +31,21 @@ namespace FCG.Payments.WebApi.Observability
         {
             tracing
                 .SetResourceBuilder(resourceBuilder)
-                .AddSource(ActivitySourceName);
+                .AddSource(ActivitySourceName)
+                .AddAspNetCoreInstrumentation(instrumentationOptions =>
+                {
+                    instrumentationOptions.RecordException = true;
+                    instrumentationOptions.Filter = context => !context.Request.Path.StartsWithSegments("/health");
+                })
+                .AddHttpClientInstrumentation(instrumentationOptions =>
+                {
+                    instrumentationOptions.RecordException = true;
+                })
+                .AddSqlClientInstrumentation(instrumentationOptions =>
+                {
+                    instrumentationOptions.RecordException = true;
+                    instrumentationOptions.SetDbStatementForText = true;
+                });
 
             if (!options.EnableOtlpExporter)
             {
@@ -44,7 +62,8 @@ namespace FCG.Payments.WebApi.Observability
         {
             metrics
                 .SetResourceBuilder(resourceBuilder)
-                .AddMeter(MeterName);
+                .AddMeter(MeterName)
+                .AddRuntimeInstrumentation();
 
             if (!options.EnableOtlpExporter)
             {
