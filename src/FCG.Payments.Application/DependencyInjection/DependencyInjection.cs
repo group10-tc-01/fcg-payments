@@ -18,6 +18,7 @@ namespace FCG.Payments.Application.DependencyInjection
                 configuration.RegisterServicesFromAssembly(assembly);
 
                 configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
+                configuration.AddOpenBehavior(typeof(MetricsBehavior<,>));
                 configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
             });
 

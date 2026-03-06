@@ -1,4 +1,5 @@
 ﻿
+using FCG.Payments.Application.Observability;
 using FCG.Payments.Domain.Abstractions;
 using FCG.Payments.Domain.Exceptions;
 using FCG.Payments.Domain.Payments;
@@ -64,6 +65,11 @@ namespace FCG.Payments.Application.UseCases.Payments.ProcessPayment
             await _writeOnlyPaymentRepository.AddAsync(payment, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            PaymentsMetrics.RecordProcessed(
+                payment.Status.ToString().ToLowerInvariant(),
+                payment.Amount,
+                debitSuccessful ? "none" : "insufficient_balance");
 
             return new ProcessPaymentResponse(payment.CorrelationId, payment.Id, payment.UserId, payment.GameId, payment.Amount, payment.Status);
         }

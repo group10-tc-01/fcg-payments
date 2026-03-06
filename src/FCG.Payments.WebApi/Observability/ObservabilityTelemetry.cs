@@ -63,6 +63,8 @@ namespace FCG.Payments.WebApi.Observability
             metrics
                 .SetResourceBuilder(resourceBuilder)
                 .AddMeter(MeterName)
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation();
 
             if (!options.EnableOtlpExporter)
