@@ -3,7 +3,9 @@ using FCG.Payments.Application.Abstractions.Messaging;
 using FCG.Payments.Infrastructure.Kafka.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 
 namespace FCG.Payments.Infrastructure.Kafka.Producers
@@ -11,6 +13,9 @@ namespace FCG.Payments.Infrastructure.Kafka.Producers
     [ExcludeFromCodeCoverage]
     public sealed class KafkaMessageProducer : IMessageProducer, IDisposable
     {
+        private static readonly ActivitySource ActivitySource = new("FCG.Payments");
+        private const string TraceParentHeaderName = "traceparent";
+        private const string TraceStateHeaderName = "tracestate";
         private readonly IProducer<string, string> _producer;
         private readonly ILogger<KafkaMessageProducer> _logger;
         private bool _disposed;
@@ -47,8 +52,18 @@ namespace FCG.Payments.Infrastructure.Kafka.Producers
                 var kafkaMessage = new Message<string, string>
                 {
                     Key = Guid.NewGuid().ToString(),
-                    Value = serializedMessage
+                    Value = serializedMessage,
+                    Headers = new Headers()
                 };
+
+                using Activity? activity = ActivitySource.StartActivity("kafka publish", ActivityKind.Producer);
+
+                activity?.SetTag("messaging.system", "kafka");
+                activity?.SetTag("messaging.destination.name", topic);
+                activity?.SetTag("messaging.operation", "publish");
+                activity?.SetTag("messaging.message.id", kafkaMessage.Key);
+
+                AddTraceHeaders(kafkaMessage.Headers, activity);
 
                 _logger.LogInformation(
                     "Producing message to topic {Topic} with key {MessageKey} and type {MessageType}",
@@ -87,6 +102,29 @@ namespace FCG.Payments.Infrastructure.Kafka.Producers
             _producer?.Dispose();
             _disposed = true;
             GC.SuppressFinalize(this);
+        }
+
+        private static void AddTraceHeaders(Headers headers, Activity? activity)
+        {
+            if (activity is null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(activity.Id))
+            {
+                return;
+            }
+
+            headers.Remove(TraceParentHeaderName);
+            headers.Remove(TraceStateHeaderName);
+
+            headers.Add(TraceParentHeaderName, Encoding.UTF8.GetBytes(activity.Id));
+
+            if (!string.IsNullOrWhiteSpace(activity.TraceStateString))
+            {
+                headers.Add(TraceStateHeaderName, Encoding.UTF8.GetBytes(activity.TraceStateString));
+            }
         }
     }
 }

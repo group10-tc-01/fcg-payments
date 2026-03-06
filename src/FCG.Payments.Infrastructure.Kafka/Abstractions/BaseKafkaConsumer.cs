@@ -1,6 +1,7 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
@@ -9,6 +10,9 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
     [ExcludeFromCodeCoverage]
     public abstract class BaseKafkaConsumer<TEvent> : BackgroundService, IKafkaConsumer where TEvent : class
     {
+        private static readonly ActivitySource ActivitySource = new("FCG.Payments");
+        private const string TraceParentHeaderName = "traceparent";
+        private const string TraceStateHeaderName = "tracestate";
         private readonly ILogger<BaseKafkaConsumer<TEvent>> _logger;
         private readonly IConsumer<string, string> _consumer;
         private readonly string _topic;
@@ -94,6 +98,17 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
 
                         if (@event != null)
                         {
+                            ActivityContext parentContext = ExtractActivityContext(consumeResult.Message.Headers);
+
+                            using Activity? activity = ActivitySource.StartActivity("kafka consume", ActivityKind.Consumer, parentContext);
+
+                            activity?.SetTag("messaging.system", "kafka");
+                            activity?.SetTag("messaging.destination.name", _topic);
+                            activity?.SetTag("messaging.operation", "consume");
+                            activity?.SetTag("messaging.kafka.partition", consumeResult.Partition.Value);
+                            activity?.SetTag("messaging.kafka.offset", consumeResult.Offset.Value);
+                            activity?.SetTag("messaging.message.id", consumeResult.Message.Key);
+
                             await ProcessEventAsync(@event, cancellationToken);
 
                             _consumer.Commit(consumeResult);
@@ -121,6 +136,41 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
         }
 
         protected abstract Task ProcessEventAsync(TEvent @event, CancellationToken cancellationToken);
+
+        private static ActivityContext ExtractActivityContext(Headers? headers)
+        {
+            if (headers == null)
+            {
+                return default;
+            }
+
+            string? traceParent = GetHeaderValue(headers, TraceParentHeaderName);
+
+            if (string.IsNullOrWhiteSpace(traceParent))
+            {
+                return default;
+            }
+
+            string? traceState = GetHeaderValue(headers, TraceStateHeaderName);
+
+            return ActivityContext.TryParse(traceParent, traceState, out ActivityContext activityContext)
+                ? activityContext
+                : default;
+        }
+
+        private static string? GetHeaderValue(Headers headers, string headerName)
+        {
+            IHeader? header = headers.LastOrDefault(item => item.Key == headerName);
+
+            if (header == null)
+            {
+                return null;
+            }
+
+            return header.GetValueBytes() is byte[] valueBytes
+                ? System.Text.Encoding.UTF8.GetString(valueBytes)
+                : null;
+        }
 
         public override void Dispose()
         {
