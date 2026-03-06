@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FCG.Payments.WebApi.Middlewares
 {
@@ -21,6 +22,11 @@ namespace FCG.Payments.WebApi.Middlewares
 
             context.Items[CorrelationIdKey] = correlationId;
             context.Response.Headers.Append(CorrelationIdHeaderName, correlationId);
+
+            Activity? activity = Activity.Current;
+
+            activity?.SetTag("correlation_id", correlationId);
+            activity?.AddBaggage("correlation_id", correlationId);
 
             using (Serilog.Context.LogContext.PushProperty("CorrelationId", correlationId))
             {

@@ -1,10 +1,13 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using FCG.Payments.Infrastructure.SqlServer.Persistance;
+using FCG.Payments.WebApi.Observability;
 using FCG.Payments.WebApi.Filters;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Logs;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json.Serialization;
 
 namespace FCG.Payments.WebApi.DependencyInjection
@@ -29,8 +32,37 @@ namespace FCG.Payments.WebApi.DependencyInjection
             services.AddFilters();
             services.AddHealthChecks().AddDbContextCheck<FcgPaymentDbContext>();
             services.AddRouting(options => options.LowercaseUrls = true);
+            services.AddObservability(configuration);
             services.AddSerilogLogging(configuration);
             return services;
+        }
+
+        private static void AddObservability(this IServiceCollection services, IConfiguration configuration)
+        {
+            var observabilityOptions = configuration.GetSection(ObservabilityOptions.SectionName).Get<ObservabilityOptions>() ?? new ObservabilityOptions();
+
+            if (string.IsNullOrWhiteSpace(observabilityOptions.ServiceVersion))
+            {
+                observabilityOptions.ServiceVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0-local";
+            }
+
+            var environmentName = configuration["ASPNETCORE_ENVIRONMENT"] ?? Environments.Production;
+
+            services.Configure<ObservabilityOptions>(configuration.GetSection(ObservabilityOptions.SectionName));
+
+            services.AddOpenTelemetry()
+                .WithTracing(tracing =>
+                {
+                    var resourceBuilder = ObservabilityTelemetry.CreateResourceBuilder(observabilityOptions, environmentName);
+
+                    ObservabilityTelemetry.ConfigureTracing(tracing, resourceBuilder, observabilityOptions);
+                })
+                .WithMetrics(metrics =>
+                {
+                    var resourceBuilder = ObservabilityTelemetry.CreateResourceBuilder(observabilityOptions, environmentName);
+
+                    ObservabilityTelemetry.ConfigureMetrics(metrics, resourceBuilder, observabilityOptions);
+                });
         }
 
         private static void AddSwaggerConfiguration(this IServiceCollection services)
@@ -100,25 +132,45 @@ namespace FCG.Payments.WebApi.DependencyInjection
 
         private static void AddSerilogLogging(this IServiceCollection services, IConfiguration configuration)
         {
+            var observabilityOptions = configuration.GetSection(ObservabilityOptions.SectionName).Get<ObservabilityOptions>() ?? new ObservabilityOptions();
+            var environmentName = configuration["ASPNETCORE_ENVIRONMENT"] ?? Environments.Production;
             var seqUrl = configuration["Serilog:WriteTo:1:Args:serverUrl"] ?? configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithProperty("Application", "FCG.Users")
+                .Enrich.WithProperty("Application", observabilityOptions.ServiceName)
+                .Enrich.WithProperty("service.name", observabilityOptions.ServiceName)
+                .Enrich.WithProperty("service.version", observabilityOptions.ServiceVersion)
+                .Enrich.WithProperty("deployment.environment", environmentName)
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.Seq(seqUrl)
                 .CreateLogger();
 
-            Log.Information("Starting FCG.Users application");
+            Log.Information("Starting {ServiceName} application", observabilityOptions.ServiceName);
             Log.Information("Seq URL configured: {SeqUrl}", seqUrl);
-            Log.Information("Environment: {Environment}", configuration["ASPNETCORE_ENVIRONMENT"]);
+            Log.Information("Environment: {Environment}", environmentName);
+            Log.Information("OTLP endpoint configured: {OtlpEndpoint}", observabilityOptions.OtlpEndpoint);
 
             services.AddLogging(loggingBuilder =>
             {
                 loggingBuilder.ClearProviders();
                 loggingBuilder.AddSerilog();
+                loggingBuilder.AddOpenTelemetry(options =>
+                {
+                    options.IncludeFormattedMessage = true;
+                    options.IncludeScopes = true;
+                    options.ParseStateValues = true;
+
+                    if (observabilityOptions.EnableOtlpExporter)
+                    {
+                        options.AddOtlpExporter(exporterOptions =>
+                        {
+                            exporterOptions.Endpoint = new Uri(observabilityOptions.OtlpEndpoint);
+                        });
+                    }
+                });
             });
         }
     }
