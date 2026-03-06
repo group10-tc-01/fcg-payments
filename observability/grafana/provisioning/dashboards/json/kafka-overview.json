@@ -55,7 +55,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(application_command_executions_total{command=\"ProcessPaymentRequest\"}[5m])) by (success)",
+          "expr": "sum(rate(application_command_executions_commands_total{command=\"ProcessPaymentRequest\"}[5m])) by (success)",
           "legendFormat": "success={{success}}",
           "refId": "A"
         }
@@ -98,7 +98,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(application_command_failures_total[5m])) by (command, exception_type)",
+          "expr": "sum(rate(application_command_failures_commands_total[5m])) by (command, exception_type)",
           "legendFormat": "{{command}} {{exception_type}}",
           "refId": "A"
         }

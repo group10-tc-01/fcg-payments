@@ -145,7 +145,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(application_command_duration_ms_bucket{command=\"ProcessPaymentRequest\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(application_command_duration_ms_milliseconds_bucket{command=\"ProcessPaymentRequest\"}[5m])) by (le))",
           "refId": "A"
         }
       ],
@@ -230,7 +230,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(payment_amount_sum[5m])) by (status)",
+          "expr": "sum(rate(payment_amount_currency_sum[5m])) by (status)",
           "legendFormat": "{{status}}",
           "refId": "A"
         }

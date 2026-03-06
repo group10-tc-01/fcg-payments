@@ -134,6 +134,7 @@ namespace FCG.Payments.WebApi.DependencyInjection
         {
             var observabilityOptions = configuration.GetSection(ObservabilityOptions.SectionName).Get<ObservabilityOptions>() ?? new ObservabilityOptions();
             var environmentName = configuration["ASPNETCORE_ENVIRONMENT"] ?? Environments.Production;
+            var resourceBuilder = ObservabilityTelemetry.CreateResourceBuilder(observabilityOptions, environmentName);
             var seqUrl = configuration["Serilog:WriteTo:1:Args:serverUrl"] ?? configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
 
             Log.Logger = new LoggerConfiguration()
@@ -160,6 +161,7 @@ namespace FCG.Payments.WebApi.DependencyInjection
                 loggingBuilder.AddSerilog();
                 loggingBuilder.AddOpenTelemetry(options =>
                 {
+                    options.SetResourceBuilder(resourceBuilder);
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
                     options.ParseStateValues = true;

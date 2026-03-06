@@ -125,6 +125,8 @@ services:
         environment:
             - ASPNETCORE_ENVIRONMENT=Docker
             - ASPNETCORE_URLS=http://+:8080;http://+:8081
+            - OTEL_SERVICE_NAME=FCG.Payments
+            - OTEL_RESOURCE_ATTRIBUTES=service.namespace=FCG,deployment.environment=Docker,service.version=1.0.0-docker
         networks:
             - network-fcg
         restart: unless-stopped
