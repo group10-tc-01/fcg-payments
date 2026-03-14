@@ -20,9 +20,9 @@ namespace FCG.Payments.Infrastructure.SqlServer.Configurations
             builder.Property(e => e.TrailType).HasConversion<string>();
 
             // Apenas propriedades string, sem conversão
-            builder.Property(e => e.OldValues).HasColumnType("nvarchar(max)");
-            builder.Property(e => e.NewValues).HasColumnType("nvarchar(max)");
-            builder.Property(e => e.ChangedColumns).HasColumnType("nvarchar(max)");
+            builder.Property(e => e.OldValues).IsRequired(false);
+            builder.Property(e => e.NewValues).IsRequired(false);
+            builder.Property(e => e.ChangedColumns).IsRequired(false);
         }
     }
 }

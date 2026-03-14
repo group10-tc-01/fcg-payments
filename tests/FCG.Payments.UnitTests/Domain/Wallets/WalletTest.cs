@@ -94,7 +94,7 @@ namespace FCG.Payments.UnitTests.Domain.Wallets
             wallet.UserId.Should().Be(userId);
             wallet.Balance.Should().NotBeNull();
             wallet.CreatedAt.Should().NotBe(default(DateTime));
-            wallet.UpdatedAt.Should().Be(default(DateTime));
+            wallet.UpdatedAt.Should().BeNull();
         }
 
         [Fact]

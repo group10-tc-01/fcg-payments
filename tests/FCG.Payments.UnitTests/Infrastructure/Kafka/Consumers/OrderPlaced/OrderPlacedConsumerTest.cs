@@ -62,16 +62,17 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
             await InvokeProcessEventAsync(@event, CancellationToken.None);
 
             // Assert
+            // Assert
             _loggerMock
                 .Invocations
                 .Should().ContainSingle(inv =>
                     inv.Method.Name == "Log" &&
-                    inv.Arguments[0].Equals(LogLevel.Information) &&
+                    (LogLevel)inv.Arguments[0] == LogLevel.Information && // Cast explícito evita o erro de Expression
                     inv.Arguments[2].ToString()!.Contains("Processing OrderPlacedEvent") &&
                     inv.Arguments[2].ToString()!.Contains(correlationId.ToString()) &&
                     inv.Arguments[2].ToString()!.Contains(userId.ToString()) &&
                     inv.Arguments[2].ToString()!.Contains(gameId.ToString()) &&
-                    inv.Arguments[2].ToString()!.Contains(amount.ToString())
+                    inv.Arguments[2].ToString()!.Contains(amount.ToString(System.Globalization.CultureInfo.InvariantCulture))
                 );
         }
 

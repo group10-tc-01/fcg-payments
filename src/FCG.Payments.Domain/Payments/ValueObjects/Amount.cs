@@ -1,4 +1,5 @@
 ﻿using FCG.Payments.Domain.Exceptions;
+using System.Globalization;
 
 namespace FCG.Payments.Domain.Payments.ValueObjects
 {
@@ -24,6 +25,6 @@ namespace FCG.Payments.Domain.Payments.ValueObjects
         public static implicit operator decimal(Amount price) => price.Value;
         public static implicit operator Amount(decimal value) => Create(value);
 
-        public override string ToString() => Value.ToString("F2");
+        public override string ToString() => Value.ToString("F2", CultureInfo.InvariantCulture);
     }
 }

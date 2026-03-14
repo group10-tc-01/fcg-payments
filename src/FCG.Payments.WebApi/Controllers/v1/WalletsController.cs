@@ -1,9 +1,11 @@
 ﻿using FCG.Payments.Application.UseCases.Wallets.DepositBalance;
 using FCG.Payments.Application.UseCases.Wallets.GetWalletBalance;
+using FCG.Payments.Domain.Payments.ValueObjects;
 using FCG.Payments.WebApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace FCG.Payments.WebApi.Controllers.v1
 {

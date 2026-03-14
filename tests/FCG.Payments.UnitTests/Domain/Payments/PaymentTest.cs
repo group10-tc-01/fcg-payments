@@ -165,7 +165,7 @@ namespace FCG.Payments.UnitTests.Domain.Payments
             payment.Amount.Value.Should().Be(amount);
             payment.Status.Should().Be(PaymentStatus.Pending);
             payment.CreatedAt.Should().NotBe(default(DateTime));
-            payment.UpdatedAt.Should().Be(default(DateTime));
+            payment.UpdatedAt.Should().BeNull();
             payment.ProcessedAt.Should().BeNull();
             payment.FailureReason.Should().BeNull();
         }

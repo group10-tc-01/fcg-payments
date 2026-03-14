@@ -10,7 +10,7 @@ namespace FCG.Payments.IntegratedTests.Controllers
 {
     public class WalletsControllerTest : FcgFixture
     {
-        private const string BaseUrl = "/api/wallets";
+        private const string BaseUrl = "/api/v1/wallets";
 
         public WalletsControllerTest(CustomWebApplicationFactory factory) : base(factory) { }
 
