@@ -28,6 +28,14 @@ namespace FCG.Payments.Infrastructure.Kafka.Producers
                 MessageSendMaxRetries = 3
             };
 
+            if (kafkaSettings.Value.UseSaslSsl)
+            {
+                config.SecurityProtocol = SecurityProtocol.SaslSsl;
+                config.SaslMechanism = SaslMechanism.Plain;
+                config.SaslUsername = kafkaSettings.Value.SaslUsername;
+                config.SaslPassword = kafkaSettings.Value.SaslPassword;
+            }
+
             _producer = new ProducerBuilder<string, string>(config).Build();
         }
 

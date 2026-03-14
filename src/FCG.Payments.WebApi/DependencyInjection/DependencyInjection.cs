@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace FCG.Payments.WebApi.DependencyInjection
 {
@@ -13,14 +14,22 @@ namespace FCG.Payments.WebApi.DependencyInjection
     {
         public static IServiceCollection AddWebApi(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddControllers()
+                   .AddJsonOptions(options =>
+                   {
+                       options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                   });
+
+            services.AddEndpointsApiExplorer();
+            services.AddHttpContextAccessor();
+            services.AddSwaggerGen();
+            services.AddSwaggerConfiguration();
+
             services.AddVersioning();
             services.AddFilters();
             services.AddHealthChecks().AddDbContextCheck<FcgPaymentDbContext>();
             services.AddRouting(options => options.LowercaseUrls = true);
-            services.AddSwaggerConfiguration();
             services.AddSerilogLogging(configuration);
-            services.AddApplicationInsights(configuration);
-
             return services;
         }
 
@@ -110,16 +119,6 @@ namespace FCG.Payments.WebApi.DependencyInjection
             {
                 loggingBuilder.ClearProviders();
                 loggingBuilder.AddSerilog();
-            });
-        }
-
-        private static void AddApplicationInsights(this IServiceCollection services, IConfiguration configuration)
-        {
-            var applicationUrl = configuration["ApplicationInsights:ConnectionString"];
-
-            services.AddApplicationInsightsTelemetry(options =>
-            {
-                options.ConnectionString = applicationUrl;
             });
         }
     }
