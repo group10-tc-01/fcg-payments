@@ -18,7 +18,16 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
         {
             PropertyNameCaseInsensitive = true
         };
-        protected BaseKafkaConsumer(ILogger<BaseKafkaConsumer<TEvent>> logger, string bootstrapServers, string groupId, string topic, int consumerTimeoutMs = 100)
+
+        protected BaseKafkaConsumer(
+            ILogger<BaseKafkaConsumer<TEvent>> logger,
+            string bootstrapServers,
+            string groupId,
+            string topic,
+            bool useSaslSsl,
+            string saslUsername,
+            string saslPassword,
+            int consumerTimeoutMs = 100)
         {
             _logger = logger;
             _topic = topic;
@@ -31,6 +40,14 @@ namespace FCG.Payments.Infrastructure.Kafka.Abstractions
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnableAutoCommit = false
             };
+
+            if (useSaslSsl)
+            {
+                config.SecurityProtocol = SecurityProtocol.SaslSsl;
+                config.SaslMechanism = SaslMechanism.Plain;
+                config.SaslUsername = saslUsername;
+                config.SaslPassword = saslPassword;
+            }
 
             _consumer = new ConsumerBuilder<string, string>(config).Build();
         }

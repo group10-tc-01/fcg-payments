@@ -3,6 +3,9 @@ namespace FCG.Payments.Infrastructure.Kafka.Settings
     public sealed class KafkaSettings
     {
         public string BootstrapServers { get; set; } = string.Empty;
+        public bool UseSaslSsl { get; set; }
+        public string SaslUsername { get; set; } = string.Empty;
+        public string SaslPassword { get; set; } = string.Empty;
         public string GroupId { get; set; } = string.Empty;
         public int ConsumerTimeoutMs { get; set; } = 100;
         public KafkaTopics Topics { get; set; } = new();

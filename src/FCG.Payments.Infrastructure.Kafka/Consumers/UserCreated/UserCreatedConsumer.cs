@@ -14,7 +14,15 @@ namespace FCG.Payments.Infrastructure.Kafka.Consumers.UserCreated
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public UserCreatedConsumer(ILogger<UserCreatedConsumer> logger, IOptions<KafkaSettings> kafkaSettings, IServiceScopeFactory serviceScopeFactory)
-            : base(logger, kafkaSettings.Value.BootstrapServers, kafkaSettings.Value.GroupId, kafkaSettings.Value.Topics.UserCreated, kafkaSettings.Value.ConsumerTimeoutMs)
+            : base(
+                logger,
+                kafkaSettings.Value.BootstrapServers,
+                kafkaSettings.Value.GroupId,
+                kafkaSettings.Value.Topics.UserCreated,
+                kafkaSettings.Value.UseSaslSsl,
+                kafkaSettings.Value.SaslUsername,
+                kafkaSettings.Value.SaslPassword,
+                kafkaSettings.Value.ConsumerTimeoutMs)
         {
             _logger = logger;
             _serviceScopeFactory = serviceScopeFactory;

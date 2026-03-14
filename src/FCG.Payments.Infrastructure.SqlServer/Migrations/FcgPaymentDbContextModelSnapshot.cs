@@ -13,6 +13,7 @@ namespace FCG.Payments.Infrastructure.SqlServer.Migrations
 {
     [ExcludeFromCodeCoverage]
     [DbContext(typeof(FcgPaymentDbContext))]
+    [ExcludeFromCodeCoverage]
     partial class FcgPaymentDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
