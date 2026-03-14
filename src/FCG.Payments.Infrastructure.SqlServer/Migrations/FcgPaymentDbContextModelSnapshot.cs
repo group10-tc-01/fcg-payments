@@ -11,8 +11,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace FCG.Payments.Infrastructure.SqlServer.Migrations
 {
-    [DbContext(typeof(FcgPaymentDbContext))]
     [ExcludeFromCodeCoverage]
+    [DbContext(typeof(FcgPaymentDbContext))]
     partial class FcgPaymentDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
