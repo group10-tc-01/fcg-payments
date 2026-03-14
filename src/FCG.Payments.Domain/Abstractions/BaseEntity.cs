@@ -4,7 +4,12 @@
     {
         public Guid Id { get; init; }
         public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; protected set; }
+        public DateTime? UpdatedAt { get; protected set; }
+
+        #region Audits properties
+        public string CreatedBy { get; protected set; } = string.Empty;
+        public string? UpdatedBy { get; protected set; }
+        #endregion
 
         protected BaseEntity() { }
 

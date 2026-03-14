@@ -22,7 +22,7 @@ namespace FCG.Payments.UnitTests.Domain.Wallets
             wallet.Balance.Should().NotBeNull();
             wallet.Balance.Value.Should().Be(1000m);
             wallet.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(30));
-            wallet.UpdatedAt.TimeOfDay.Should().Be(TimeSpan.Zero);
+            wallet.UpdatedAt?.TimeOfDay.Should().Be(TimeSpan.Zero);
         }
 
         [Fact]

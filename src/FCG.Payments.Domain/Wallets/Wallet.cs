@@ -4,10 +4,18 @@ using FCG.Payments.Domain.Wallets.ValueObjects;
 
 namespace FCG.Payments.Domain.Wallets
 {
-    public sealed class Wallet : BaseEntity
+    public sealed class Wallet : BaseEntity, IAuditableEntity
     {
         public Guid UserId { get; private set; }
         public Balance Balance { get; private set; } = null!;
+
+        #region Audits properties
+        // Implementação explícita - expõe via interface, mas mantém protected set
+        DateTime IAuditableEntity.CreatedAt { get => CreatedAt; set => CreatedAt = value; }
+        DateTime? IAuditableEntity.UpdatedAt { get => UpdatedAt; set => UpdatedAt = value; }
+        string IAuditableEntity.CreatedBy { get => CreatedBy; set => CreatedBy = value; }
+        string? IAuditableEntity.UpdatedBy { get => UpdatedBy; set => UpdatedBy = value; }
+        #endregion
 
         public static Wallet CreateWallet(Guid userId)
         {

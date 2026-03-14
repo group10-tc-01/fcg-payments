@@ -29,7 +29,7 @@ namespace FCG.Payments.UnitTests.Domain.Payments
             payment.FailureReason.Should().BeNull();
             payment.ProcessedAt.Should().BeNull();
             payment.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(30));
-            payment.UpdatedAt.TimeOfDay.Should().Be(TimeSpan.Zero);
+            payment.UpdatedAt?.TimeOfDay.Should().Be(TimeSpan.Zero);
         }
 
         [Fact]

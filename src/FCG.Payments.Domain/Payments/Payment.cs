@@ -5,7 +5,7 @@ using FCG.Payments.Domain.Wallets;
 
 namespace FCG.Payments.Domain.Payments
 {
-    public sealed class Payment : BaseEntity
+    public sealed class Payment : BaseEntity, IAuditableEntity
     {
         public string UserEmail { get; private set; } = null!;
         public Guid CorrelationId { get; private set; }
@@ -17,6 +17,14 @@ namespace FCG.Payments.Domain.Payments
         public string? FailureReason { get; private set; }
         public DateTime? ProcessedAt { get; private set; }
         public Wallet Wallet { get; } = null!;
+
+        #region Audits properties
+        // Implementação explícita - expõe via interface, mas mantém protected set
+        DateTime IAuditableEntity.CreatedAt { get => CreatedAt; set => CreatedAt = value; }
+        DateTime? IAuditableEntity.UpdatedAt { get => UpdatedAt; set => UpdatedAt = value; }
+        string IAuditableEntity.CreatedBy { get => CreatedBy; set => CreatedBy = value; }
+        string? IAuditableEntity.UpdatedBy { get => UpdatedBy; set => UpdatedBy = value; }
+        #endregion
 
         public static Payment CreatePayment(string userEmail, Guid correlationId, Guid userId, Guid gameId, Guid walletId, decimal amount)
         {

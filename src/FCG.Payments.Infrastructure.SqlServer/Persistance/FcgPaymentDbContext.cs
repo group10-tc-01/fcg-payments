@@ -1,6 +1,7 @@
 ﻿using FCG.Payments.Domain.Abstractions;
 using FCG.Payments.Domain.Payments;
 using FCG.Payments.Domain.Wallets;
+using FCG.Payments.Infrastructure.SqlServer.Persistance.Interceptors;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -12,13 +13,25 @@ namespace FCG.Payments.Infrastructure.SqlServer.Persistance
     public class FcgPaymentDbContext : DbContext, IUnitOfWork
     {
         private readonly IPublisher _publisher;
+        private readonly AuditingInterceptor _auditingInterceptor;
 
         public DbSet<Wallet> Wallet { get; set; }
         public DbSet<Payment> Payment { get; set; }
+        public DbSet<AuditTrail> AuditTrail { get; set; }
 
-        public FcgPaymentDbContext(DbContextOptions<FcgPaymentDbContext> options, IPublisher publisher) : base(options)
+        public FcgPaymentDbContext(
+            DbContextOptions<FcgPaymentDbContext> options, 
+            IPublisher publisher,
+            AuditingInterceptor auditingInterceptor) : base(options)
         {
             _publisher = publisher;
+            _auditingInterceptor = auditingInterceptor;
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.AddInterceptors(_auditingInterceptor);
+            base.OnConfiguring(optionsBuilder);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
