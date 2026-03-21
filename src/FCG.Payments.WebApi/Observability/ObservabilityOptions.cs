@@ -11,5 +11,7 @@ namespace FCG.Payments.WebApi.Observability
         public string OtlpEndpoint { get; set; } = "http://localhost:4317";
 
         public bool EnableOtlpExporter { get; set; } = true;
+
+        public string OtlpAuthHeader { get; set; } = string.Empty;
     }
 }

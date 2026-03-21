@@ -12,12 +12,14 @@ namespace FCG.Payments.WebApi.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly IHostEnvironment _env;
+        private readonly ILogger<GlobalExceptionMiddleware> _logger;
         private const string CorrelationIdKey = "CorrelationId";
 
-        public GlobalExceptionMiddleware(RequestDelegate next, IHostEnvironment env)
+        public GlobalExceptionMiddleware(RequestDelegate next, IHostEnvironment env, ILogger<GlobalExceptionMiddleware> logger)
         {
             _next = next;
             _env = env;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -92,6 +94,9 @@ namespace FCG.Payments.WebApi.Middlewares
 
         private async Task HandleGenericExceptionAsync(HttpContext context, Exception exception, string traceId, string? correlationId)
         {
+            _logger.LogError(exception, "Unhandled exception. TraceId: {TraceId} CorrelationId: {CorrelationId} Path: {Path}",
+                traceId, correlationId, context.Request.Path);
+
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
             var problemDetails = new ProblemDetails

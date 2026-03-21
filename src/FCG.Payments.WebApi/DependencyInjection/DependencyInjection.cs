@@ -3,8 +3,9 @@ using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using FCG.Payments.WebApi.Observability;
 using FCG.Payments.WebApi.Filters;
 using Microsoft.OpenApi.Models;
-using OpenTelemetry.Logs;
+using OpenTelemetry.Exporter;
 using Serilog;
+using Serilog.Sinks.OpenTelemetry;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -49,6 +50,13 @@ namespace FCG.Payments.WebApi.DependencyInjection
             var environmentName = configuration["ASPNETCORE_ENVIRONMENT"] ?? Environments.Production;
 
             services.Configure<ObservabilityOptions>(configuration.GetSection(ObservabilityOptions.SectionName));
+
+            if (!string.IsNullOrWhiteSpace(observabilityOptions.OtlpAuthHeader))
+            {
+                Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", observabilityOptions.OtlpEndpoint + "/otlp");
+                Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+                Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", $"Authorization={observabilityOptions.OtlpAuthHeader}");
+            }
 
             services.AddOpenTelemetry()
                 .WithTracing(tracing =>
@@ -134,10 +142,10 @@ namespace FCG.Payments.WebApi.DependencyInjection
         {
             var observabilityOptions = configuration.GetSection(ObservabilityOptions.SectionName).Get<ObservabilityOptions>() ?? new ObservabilityOptions();
             var environmentName = configuration["ASPNETCORE_ENVIRONMENT"] ?? Environments.Production;
-            var resourceBuilder = ObservabilityTelemetry.CreateResourceBuilder(observabilityOptions, environmentName);
-            var seqUrl = configuration["Serilog:WriteTo:1:Args:serverUrl"] ?? configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
 
-            Log.Logger = new LoggerConfiguration()
+            bool useGrafanaCloud = !string.IsNullOrWhiteSpace(observabilityOptions.OtlpAuthHeader);
+
+            var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
@@ -146,12 +154,39 @@ namespace FCG.Payments.WebApi.DependencyInjection
                 .Enrich.WithProperty("service.name", observabilityOptions.ServiceName)
                 .Enrich.WithProperty("service.version", observabilityOptions.ServiceVersion)
                 .Enrich.WithProperty("deployment.environment", environmentName)
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] [{trace_id}/{span_id}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.Seq(seqUrl)
-                .CreateLogger();
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] [{trace_id}/{span_id}] {Message:lj}{NewLine}{Exception}");
+
+            if (useGrafanaCloud)
+            {
+                loggerConfig.WriteTo.OpenTelemetry(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = observabilityOptions.OtlpEndpoint + "/otlp/v1/logs";
+                    otlpOptions.Protocol = OtlpProtocol.HttpProtobuf;
+                    otlpOptions.Headers = new Dictionary<string, string>
+                    {
+                        ["Authorization"] = observabilityOptions.OtlpAuthHeader
+                    };
+                    otlpOptions.ResourceAttributes = new Dictionary<string, object>
+                    {
+                        ["service.name"] = observabilityOptions.ServiceName,
+                        ["service.version"] = observabilityOptions.ServiceVersion,
+                        ["deployment.environment"] = environmentName,
+                        ["service.namespace"] = "FCG"
+                    };
+                });
+
+                Log.Logger = loggerConfig.CreateLogger();
+                Log.Information("Grafana Cloud mode: logs shipped via OTLP, Seq sink disabled");
+            }
+            else
+            {
+                var seqUrl = configuration["Serilog:WriteTo:1:Args:serverUrl"] ?? configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
+                loggerConfig.WriteTo.Seq(seqUrl);
+                Log.Logger = loggerConfig.CreateLogger();
+                Log.Information("Seq sink configured: {SeqUrl}", seqUrl);
+            }
 
             Log.Information("Starting {ServiceName} application", observabilityOptions.ServiceName);
-            Log.Information("Seq URL configured: {SeqUrl}", seqUrl);
             Log.Information("Environment: {Environment}", environmentName);
             Log.Information("OTLP endpoint configured: {OtlpEndpoint}", observabilityOptions.OtlpEndpoint);
 
@@ -159,21 +194,6 @@ namespace FCG.Payments.WebApi.DependencyInjection
             {
                 loggingBuilder.ClearProviders();
                 loggingBuilder.AddSerilog();
-                loggingBuilder.AddOpenTelemetry(options =>
-                {
-                    options.SetResourceBuilder(resourceBuilder);
-                    options.IncludeFormattedMessage = true;
-                    options.IncludeScopes = true;
-                    options.ParseStateValues = true;
-
-                    if (observabilityOptions.EnableOtlpExporter)
-                    {
-                        options.AddOtlpExporter(exporterOptions =>
-                        {
-                            exporterOptions.Endpoint = new Uri(observabilityOptions.OtlpEndpoint);
-                        });
-                    }
-                });
             });
         }
     }
