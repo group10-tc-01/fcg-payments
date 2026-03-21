@@ -5,7 +5,7 @@ using FCG.Payments.Domain.Wallets;
 
 namespace FCG.Payments.Domain.Payments
 {
-    public sealed class Payment : BaseEntity
+    public sealed class Payment : BaseEntity, IAuditableEntity
     {
         public string UserEmail { get; private set; } = null!;
         public Guid CorrelationId { get; private set; }

@@ -3,6 +3,7 @@ using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -12,10 +13,12 @@ using System.Diagnostics.CodeAnalysis;
 namespace FCG.Payments.Infrastructure.SqlServer.Migrations
 {
     [DbContext(typeof(FcgPaymentDbContext))]
+    [Migration("20260321190848_Add_AuditTrail_Table")]
     [ExcludeFromCodeCoverage]
-    partial class FcgPaymentDbContextModelSnapshot : ModelSnapshot
+    partial class Add_AuditTrail_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
