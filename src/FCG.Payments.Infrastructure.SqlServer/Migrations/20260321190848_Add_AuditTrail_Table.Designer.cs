@@ -14,7 +14,6 @@ namespace FCG.Payments.Infrastructure.SqlServer.Migrations
 {
     [DbContext(typeof(FcgPaymentDbContext))]
     [Migration("20260321190848_Add_AuditTrail_Table")]
-    [ExcludeFromCodeCoverage]
     partial class Add_AuditTrail_Table
     {
         /// <inheritdoc />
