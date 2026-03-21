@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -54,7 +55,7 @@ namespace FCG.Payments.WebApi.Observability
 
             tracing.AddOtlpExporter(exporterOptions =>
             {
-                exporterOptions.Endpoint = new Uri(options.OtlpEndpoint);
+                ConfigureOtlpExporter(exporterOptions, options, OtlpSignal.Traces);
             });
         }
 
@@ -74,8 +75,29 @@ namespace FCG.Payments.WebApi.Observability
 
             metrics.AddOtlpExporter(exporterOptions =>
             {
-                exporterOptions.Endpoint = new Uri(options.OtlpEndpoint);
+                ConfigureOtlpExporter(exporterOptions, options, OtlpSignal.Metrics);
             });
+        }
+
+        private enum OtlpSignal { Traces, Metrics }
+
+        private static void ConfigureOtlpExporter(OtlpExporterOptions exporterOptions, ObservabilityOptions options, OtlpSignal signal)
+        {
+            if (!string.IsNullOrWhiteSpace(options.OtlpAuthHeader))
+            {
+                // Grafana Cloud OTLP gateway requires the full signal path in the URL.
+                // The SDK does NOT auto-append /v1/traces or /v1/metrics when Endpoint is
+                // set explicitly, so we build the complete path here.
+                string signalPath = signal == OtlpSignal.Traces ? "/otlp/v1/traces" : "/otlp/v1/metrics";
+                exporterOptions.Endpoint = new Uri(options.OtlpEndpoint + signalPath);
+                exporterOptions.Protocol = OtlpExportProtocol.HttpProtobuf;
+                exporterOptions.Headers = $"Authorization={options.OtlpAuthHeader}";
+            }
+            else
+            {
+                // Local otel-collector via gRPC — use the endpoint as-is.
+                exporterOptions.Endpoint = new Uri(options.OtlpEndpoint);
+            }
         }
     }
 }
