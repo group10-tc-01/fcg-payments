@@ -1,8 +1,10 @@
 ﻿using Asp.Versioning;
 using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using FCG.Payments.WebApi.Filters;
+using FCG.Payments.WebApi.Observability;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Sinks.OpenTelemetry;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
@@ -29,6 +31,7 @@ namespace FCG.Payments.WebApi.DependencyInjection
             services.AddFilters();
             services.AddHealthChecks().AddDbContextCheck<FcgPaymentDbContext>();
             services.AddRouting(options => options.LowercaseUrls = true);
+            services.AddObservability(configuration);
             services.AddSerilogLogging(configuration);
             return services;
         }
@@ -98,22 +101,66 @@ namespace FCG.Payments.WebApi.DependencyInjection
             });
         }
 
+        private static void AddObservability(this IServiceCollection services, IConfiguration configuration)
+        {
+            var options = new ObservabilityOptions();
+            configuration.GetSection(ObservabilityOptions.SectionName).Bind(options);
+
+            var environment = configuration["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+
+            var resourceBuilder = ObservabilityTelemetry.CreateResourceBuilder(options, environment);
+
+            services.AddOpenTelemetry()
+                .WithTracing(builder => builder.ConfigureTracing(options, resourceBuilder))
+                .WithMetrics(builder => builder.ConfigureMetrics(options, resourceBuilder));
+        }
+
         private static void AddSerilogLogging(this IServiceCollection services, IConfiguration configuration)
         {
-            var seqUrl = configuration["Serilog:WriteTo:1:Args:serverUrl"] ?? configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
+            var options = new ObservabilityOptions();
+            configuration.GetSection(ObservabilityOptions.SectionName).Bind(options);
 
-            Log.Logger = new LoggerConfiguration()
+            var environment = configuration["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+
+            var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithProperty("Application", "FCG.Users")
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.Seq(seqUrl)
-                .CreateLogger();
+                .Enrich.WithProperty("Application", "FCG.Payments")
+                .Enrich.WithProperty("Environment", environment)
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}");
 
-            Log.Information("Starting FCG.Users application");
-            Log.Information("Seq URL configured: {SeqUrl}", seqUrl);
-            Log.Information("Environment: {Environment}", configuration["ASPNETCORE_ENVIRONMENT"]);
+            if (options.EnableOtlpExporter && !string.IsNullOrEmpty(options.OtlpEndpoint))
+            {
+                loggerConfig.WriteTo.OpenTelemetry(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = $"{options.OtlpEndpoint}/otlp/v1/logs";
+                    otlpOptions.Protocol = OtlpProtocol.HttpProtobuf;
+                    otlpOptions.Headers = new Dictionary<string, string>
+                    {
+                        ["Authorization"] = options.OtlpAuthHeader
+                    };
+                    otlpOptions.ResourceAttributes = new Dictionary<string, object>
+                    {
+                        ["service.name"] = options.ServiceName,
+                        ["deployment.environment"] = environment
+                    };
+                });
+            }
+
+            Log.Logger = loggerConfig.CreateLogger();
+
+            Log.Information("Starting {Application} application", "FCG.Payments");
+            Log.Information("Environment: {Environment}", environment);
+
+            if (options.EnableOtlpExporter)
+            {
+                Log.Information("OTLP exporter enabled — sending telemetry to {Endpoint}", options.OtlpEndpoint);
+            }
+            else
+            {
+                Log.Information("OTLP exporter disabled — telemetry is console-only");
+            }
 
             services.AddLogging(loggingBuilder =>
             {
