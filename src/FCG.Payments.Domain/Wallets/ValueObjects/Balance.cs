@@ -3,9 +3,9 @@ using System.Globalization;
 
 namespace FCG.Payments.Domain.Wallets.ValueObjects
 {
-    public record Balance
+    public class Balance
     {
-        public decimal Value { get; }
+        public decimal Value { get; private set; }
 
         private Balance(decimal value)
         {
@@ -18,6 +18,14 @@ namespace FCG.Payments.Domain.Wallets.ValueObjects
                 throw new DomainException("Balance cannot be negative or zero");
 
             return new Balance(value);
+        }
+
+        internal void ChangeValue(decimal newValue)
+        {
+            if (newValue < 0)
+                throw new DomainException("Balance cannot be negative");
+
+            Value = newValue;
         }
 
         public static implicit operator decimal(Balance balance) => balance.Value;

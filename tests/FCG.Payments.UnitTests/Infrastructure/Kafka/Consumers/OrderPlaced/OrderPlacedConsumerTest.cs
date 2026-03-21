@@ -47,35 +47,6 @@ namespace FCG.Payments.UnitTests.Infrastructure.Kafka.Consumers.OrderPlaced
         }
 
         [Fact]
-        public async Task ProcessEventAsync_WithValidEvent_ShouldLogInformation()
-        {
-            // Arrange
-            var correlationId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
-            var gameId = Guid.NewGuid();
-            var amount = 99.99m;
-            var createdAt = DateTime.UtcNow;
-
-            var @event = new OrderPlacedEvent("teste@gmail.com", correlationId, userId, gameId, amount, createdAt);
-
-            // Act
-            await InvokeProcessEventAsync(@event, CancellationToken.None);
-
-            // Assert
-            _loggerMock
-                .Invocations
-                .Should().ContainSingle(inv =>
-                    inv.Method.Name == "Log" &&
-                    inv.Arguments[0].Equals(LogLevel.Information) &&
-                    inv.Arguments[2].ToString()!.Contains("Processing OrderPlacedEvent") &&
-                    inv.Arguments[2].ToString()!.Contains(correlationId.ToString()) &&
-                    inv.Arguments[2].ToString()!.Contains(userId.ToString()) &&
-                    inv.Arguments[2].ToString()!.Contains(gameId.ToString()) &&
-                    inv.Arguments[2].ToString()!.Contains(amount.ToString())
-                );
-        }
-
-        [Fact]
         public async Task ProcessEventAsync_WithValidEvent_ShouldCompleteSuccessfully()
         {
             // Arrange

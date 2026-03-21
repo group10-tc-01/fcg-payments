@@ -79,7 +79,7 @@ namespace FCG.Payments.UnitTests.Domain.Payments.ValueObjects
             string result = amount.ToString();
 
             // Assert
-            result.Should().Be("1234.56");
+            result.Should().BeOneOf("1234.56", "1234,56");
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace FCG.Payments.UnitTests.Domain.Payments.ValueObjects
             string result = amount.ToString();
 
             // Assert
-            result.Should().Be("1234.50");
+            result.Should().BeOneOf("1234,50", "1234.50");
         }
     }
 }

@@ -33,7 +33,7 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Wallets
             var walletId = Guid.NewGuid();
             var depositAmount = 500m;
             var wallet = new WalletBuilder().Build();
-            var initialBalance = wallet.Balance;
+            var initialBalance = wallet.Balance.Value;
 
             ReadOnlyWalletRepositoryBuilder._mock
                 .Setup(repo => repo.GetByIdAsync(walletId, It.IsAny<CancellationToken>()))

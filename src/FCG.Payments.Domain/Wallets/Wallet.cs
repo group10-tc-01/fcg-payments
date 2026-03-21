@@ -4,7 +4,7 @@ using FCG.Payments.Domain.Wallets.ValueObjects;
 
 namespace FCG.Payments.Domain.Wallets
 {
-    public sealed class Wallet : BaseEntity
+    public sealed class Wallet : BaseEntity, IAuditableEntity
     {
         public Guid UserId { get; private set; }
         public Balance Balance { get; private set; } = null!;
@@ -24,7 +24,7 @@ namespace FCG.Payments.Domain.Wallets
             if (newValue < 0)
                 return false;
 
-            Balance = newValue;
+            Balance.ChangeValue(newValue);
             UpdatedAt = DateTime.UtcNow;
 
             return true;
@@ -35,7 +35,7 @@ namespace FCG.Payments.Domain.Wallets
             if (amount < 0)
                 throw new DomainException("Cannot add negative amount to balance");
 
-            Balance += amount;
+            Balance.ChangeValue(Balance + amount);
             UpdatedAt = DateTime.UtcNow;
         }
 
