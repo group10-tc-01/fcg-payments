@@ -4,7 +4,7 @@ services:
         container_name: sqlserver-fcg
         environment:
             - ACCEPT_EULA=Y
-            - SA_PASSWORD=YourPassword123
+            - SA_PASSWORD=${SA_PASSWORD}
             - MSSQL_PID=Developer
             - MSSQL_DATABASE=fcg_payments
         ports:
@@ -14,23 +14,11 @@ services:
         networks:
             - network-fcg
         healthcheck:
-            test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourPassword123" -Q "SELECT 1" -C || exit 1
+            test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${SA_PASSWORD}" -Q "SELECT 1" -C || exit 1
             interval: 10s
             timeout: 3s
             retries: 10
             start_period: 10s
-
-    seq:
-        image: datalust/seq:latest
-        container_name: seq-fcg
-        environment:
-            - ACCEPT_EULA=Y
-            - SEQ_FIRSTRUN_ADMINPASSWORD=YourPassword123
-        ports:
-            - "5341:5341"
-            - "5342:80"
-        networks:
-            - network-fcg
 
     fcg-payments:
         build:
@@ -50,6 +38,8 @@ services:
         environment:
             - ASPNETCORE_ENVIRONMENT=Docker
             - ASPNETCORE_URLS=http://+:8080;http://+:8081
+            - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=fcg_payments;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+            - JwtSettings__SecretKey=${JWT_SECRET_KEY}
         networks:
             - network-fcg
         restart: unless-stopped

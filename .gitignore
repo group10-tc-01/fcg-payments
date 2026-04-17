@@ -412,6 +412,11 @@ nunit-*.xml
 FCG.Payments.WebApi.csproj.user
 
 appsettings.Development.json
+appsettings.Production.json
+appsettings.Docker.json
+.env
+secrets.json
+setup-secrets.sh
 
 # Kubernetes Secrets
 k8s/**/secret-*.yaml
