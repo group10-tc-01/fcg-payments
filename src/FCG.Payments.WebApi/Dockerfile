@@ -17,11 +17,11 @@ COPY ["src/FCG.Payments.WebApi/FCG.Payments.WebApi.csproj", "src/FCG.Payments.We
 RUN dotnet restore "./src/FCG.Payments.WebApi/FCG.Payments.WebApi.csproj"
 COPY . .
 WORKDIR "/src/src/FCG.Payments.WebApi"
-RUN dotnet build "./FCG.Payments.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./FCG.Payments.WebApi.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./FCG.Payments.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./FCG.Payments.WebApi.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
