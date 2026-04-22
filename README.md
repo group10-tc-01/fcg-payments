@@ -448,7 +448,7 @@ cd src/FCG.Payments.WebApi
 dotnet user-secrets init
 
 # Configurar os secrets obrigatórios
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=127.0.0.1;Database=fcg_payments;User Id=sa;Password=SuaSenhaForte123;TrustServerCertificate=True;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=127.0.0.1;Database=fcg_payments;User Id=sa;Password=<sua-senha>;TrustServerCertificate=True;"
 dotnet user-secrets set "JwtSettings:SecretKey" "sua-chave-secreta-jwt-com-minimo-32-caracteres"
 
 # Secrets opcionais (Kafka SASL - apenas para ambiente com Event Hubs)
@@ -468,7 +468,7 @@ dotnet user-secrets list
 
 2. Preencha as variáveis no `.env`:
    ```env
-   SA_PASSWORD=SuaSenhaForte123
+   SA_PASSWORD=<sua-senha>
    JWT_SECRET_KEY=sua-chave-secreta-jwt-com-minimo-32-caracteres
    ```
 
