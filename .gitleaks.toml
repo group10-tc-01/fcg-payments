@@ -1,0 +1,13 @@
+title = "FCG Payments Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore local generated artifacts outside the GitHub checkout"
+paths = [
+  '''(^|/)\.vs/''',
+  '''(^|/)bin/''',
+  '''(^|/)obj/''',
+  '''src/FCG\.Payments\.WebApi/appsettings\.Development\.json'''
+]
