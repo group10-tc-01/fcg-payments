@@ -1,6 +1,9 @@
 using FCG.Payments.Infrastructure.MongoDb.DependencyInjection;
 using FCG.Payments.Infrastructure.MongoDb.Settings;
+using FCG.Payments.Domain.Payments.Events;
+using FCG.Payments.Domain.Payments.Reports;
 using FluentAssertions;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -24,6 +27,7 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb
                 .Build();
 
             var services = new ServiceCollection();
+            services.AddLogging();
 
             // Act
             services.AddMongoDbInfrastructure(configuration);
@@ -60,6 +64,14 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb
                 .Registrations
                 .Should()
                 .ContainSingle(registration => registration.Name == "mongodb");
+
+            provider.GetRequiredService<IPaymentReportRepository>()
+                .Should()
+                .NotBeNull();
+
+            provider.GetServices<INotificationHandler<PaymentProcessedEvent>>()
+                .Should()
+                .Contain(handler => handler.GetType().Name == "PaymentProcessedMongoHandler");
         }
     }
 }

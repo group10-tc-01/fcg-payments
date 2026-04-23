@@ -1,5 +1,6 @@
 using FCG.Payments.Application.Abstractions.Pagination;
 using FCG.Payments.Application.UseCases.Payments.GetPaymentHistory;
+using FCG.Payments.Application.UseCases.Payments.GetPaymentReport;
 using FCG.Payments.Domain.Payments;
 using FCG.Payments.IntegratedTests.Configurations;
 using FCG.Payments.WebApi.Models;
@@ -22,6 +23,68 @@ namespace FCG.Payments.IntegratedTests.Controllers
         };
 
         public PaymentsControllerTest(CustomWebApplicationFactory factory) : base(factory) { }
+
+        [Fact]
+        public async Task Given_ValidRequest_When_GetPaymentReportsIsCalled_ShouldReturnOkWithSummary()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports?pageNumber=1&pageSize=10";
+            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, adminToken);
+            var responseContent = await result.Content.ReadAsStringAsync();
+            var apiResponse = JsonSerializer.Deserialize<ApiResponse<GetPaymentReportResponse>>(responseContent, JsonOptions);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            apiResponse.Should().NotBeNull();
+            apiResponse!.Data.Should().NotBeNull();
+            apiResponse.Data.PageSize.Should().Be(10);
+            apiResponse.Data.Summary.Should().NotBeNull();
+            apiResponse.Data.Summary.TotalPayments.Should().Be(Factory.CreatedPayments.Count);
+        }
+
+        [Fact]
+        public async Task Given_UserRole_When_GetPaymentReportsIsCalled_ShouldReturnForbidden()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports?pageNumber=1&pageSize=10";
+            var userToken = GenerateToken(Guid.NewGuid(), "User");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, userToken);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        [Fact]
+        public async Task Given_NoAuthentication_When_GetPaymentReportsIsCalled_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports?pageNumber=1&pageSize=10";
+
+            // Act
+            var result = await _httpClient.GetAsync(url);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Given_InvalidPageSize_When_GetPaymentReportsIsCalled_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports?pageNumber=1&pageSize=51";
+            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, adminToken);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
 
         [Fact]
         public async Task Given_ValidRequest_When_GetPaymentHistoryIsCalled_ShouldReturnOk()

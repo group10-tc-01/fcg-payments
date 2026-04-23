@@ -1,6 +1,7 @@
 ﻿using FCG.Payments.CommomTestUtilities.Builders.Payments;
 using FCG.Payments.CommomTestUtilities.Builders.Wallets;
 using FCG.Payments.Domain.Payments;
+using FCG.Payments.Domain.Payments.Reports;
 using FCG.Payments.Domain.Wallets;
 using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using FCG.Payments.WebApi;
@@ -21,6 +22,7 @@ namespace FCG.Payments.IntegratedTests.Configurations
         private DbConnection? _connection;
         public List<Wallet> CreatedWallets { get; private set; } = [];
         public List<Payment> CreatedPayments { get; private set; } = [];
+        public List<PaymentReport> CreatedPaymentReports { get; private set; } = [];
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -28,6 +30,7 @@ namespace FCG.Payments.IntegratedTests.Configurations
             {
                 RemoveEntityFrameworkServices(services);
                 RemoveKafkaServices(services);
+                services.AddScoped<IPaymentReportRepository>(_ => new InMemoryPaymentReportRepository(CreatedPaymentReports));
 
                 _connection?.Dispose();
                 _connection = new SqliteConnection("Data Source=:memory:");
@@ -94,6 +97,15 @@ namespace FCG.Payments.IntegratedTests.Configurations
 
             CreatedWallets = CreateWallets(context, itemsQuantity);
             CreatedPayments = CreatePayments(context, CreatedWallets);
+            CreatedPaymentReports = CreatedPayments
+                .Select(payment => new PaymentReport(
+                    payment.Id,
+                    payment.UserId,
+                    payment.GameId,
+                    payment.Amount,
+                    payment.Status,
+                    payment.ProcessedAt ?? payment.CreatedAt))
+                .ToList();
         }
 
         private List<Wallet> CreateWallets(FcgPaymentDbContext context, int itemsQuantity)
@@ -143,6 +155,72 @@ namespace FCG.Payments.IntegratedTests.Configurations
                 _connection?.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private sealed class InMemoryPaymentReportRepository : IPaymentReportRepository
+        {
+            private readonly List<PaymentReport> _reports;
+
+            public InMemoryPaymentReportRepository(List<PaymentReport> reports)
+            {
+                _reports = reports;
+            }
+
+            public Task InsertAsync(PaymentReport report, CancellationToken cancellationToken = default)
+            {
+                _reports.Add(report);
+
+                return Task.CompletedTask;
+            }
+
+            public Task<(IEnumerable<PaymentReport> Reports, int TotalCount)> GetByUserIdAsync(
+                Guid userId,
+                int pageNumber,
+                int pageSize,
+                CancellationToken cancellationToken = default)
+            {
+                var reports = _reports.Where(report => report.UserId == userId);
+
+                return GetPagedAsync(reports, pageNumber, pageSize);
+            }
+
+            public Task<(IEnumerable<PaymentReport> Reports, int TotalCount)> GetPagedAsync(
+                int pageNumber,
+                int pageSize,
+                CancellationToken cancellationToken = default)
+            {
+                return GetPagedAsync(_reports, pageNumber, pageSize);
+            }
+
+            public Task<PaymentReportSummary> GetSummaryAsync(CancellationToken cancellationToken = default)
+            {
+                var approvedReports = _reports.Where(report => report.Status == PaymentStatus.Approved).ToList();
+                var rejectedReports = _reports.Where(report => report.Status == PaymentStatus.Rejected).ToList();
+
+                return Task.FromResult(new PaymentReportSummary(
+                    _reports.Count,
+                    approvedReports.Count,
+                    rejectedReports.Count,
+                    approvedReports.Sum(report => report.Amount),
+                    rejectedReports.Sum(report => report.Amount)));
+            }
+
+            private static Task<(IEnumerable<PaymentReport> Reports, int TotalCount)> GetPagedAsync(
+                IEnumerable<PaymentReport> source,
+                int pageNumber,
+                int pageSize)
+            {
+                var reports = source
+                    .OrderByDescending(report => report.ProcessedAt)
+                    .ToList();
+
+                var pagedReports = reports
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return Task.FromResult(((IEnumerable<PaymentReport>)pagedReports, reports.Count));
+            }
         }
     }
 }

@@ -2,10 +2,15 @@
 
 	<ItemGroup>
 		<PackageReference Include="AspNetCore.HealthChecks.MongoDb" />
+		<PackageReference Include="MediatR" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 		<PackageReference Include="MongoDB.Driver" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\FCG.Payments.Domain\FCG.Payments.Domain.csproj" />
 	</ItemGroup>
 
 </Project>

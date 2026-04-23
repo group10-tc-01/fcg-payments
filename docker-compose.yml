@@ -32,6 +32,23 @@ services:
         networks:
             - network-fcg
 
+    mongodb:
+        image: mongo:7.0
+        container_name: mongodb-fcg
+        ports:
+            - "27017:27017"
+        volumes:
+            - mongodb_data:/data/db
+        networks:
+            - network-fcg
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
     fcg-payments:
         build:
             context: .
@@ -42,6 +59,8 @@ services:
                 condition: service_healthy
             seq:
                 condition: service_started
+            mongodb:
+                condition: service_healthy
             kafka:
                 condition: service_healthy
         ports:
@@ -50,11 +69,16 @@ services:
         environment:
             - ASPNETCORE_ENVIRONMENT=Docker
             - ASPNETCORE_URLS=http://+:8080;http://+:8081
+            - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=fcg_payments;User Id=sa;Password=YourPassword123;TrustServerCertificate=True;
+            - KafkaSettings__BootstrapServers=kafka:29092
         networks:
             - network-fcg
         restart: unless-stopped
         healthcheck:
-            test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+            test:
+                - CMD-SHELL
+                - >-
+                    bash -c "exec 3<>/dev/tcp/localhost/8080; printf 'GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3"
             interval: 30s
             timeout: 10s
             retries: 3
@@ -129,6 +153,7 @@ volumes:
     zookeeper_data:
     zookeeper_logs:
     kafka_data:
+    mongodb_data:
 
 networks:
     network-fcg:
