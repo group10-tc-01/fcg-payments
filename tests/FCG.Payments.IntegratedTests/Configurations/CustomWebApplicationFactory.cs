@@ -138,6 +138,7 @@ namespace FCG.Payments.IntegratedTests.Configurations
                     Guid.NewGuid(),
                     wallet.Id,
                     100m);
+                payment.Approve();
                 payments.Add(payment);
             }
 

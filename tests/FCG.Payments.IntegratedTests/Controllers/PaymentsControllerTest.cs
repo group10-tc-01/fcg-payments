@@ -156,7 +156,7 @@ namespace FCG.Payments.IntegratedTests.Controllers
         }
 
         [Fact]
-        public async Task Given_ExportResultExceedsConfiguredLimit_When_ExportPaymentReportsPdfIsCalled_ShouldReturnBadRequest()
+        public async Task Given_ExportResultExceedsConfiguredLimit_When_ExportPaymentReportsPdfIsCalled_ShouldReturnPdfWithLimit()
         {
             // Arrange
             var url = $"{BaseUrl}/reports/export/pdf";
@@ -164,9 +164,12 @@ namespace FCG.Payments.IntegratedTests.Controllers
 
             // Act
             var result = await DoAuthenticatedGet(url, adminToken);
+            var bytes = await result.Content.ReadAsByteArrayAsync();
 
             // Assert
-            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+            bytes.Take(4).Should().Equal((byte)'%', (byte)'P', (byte)'D', (byte)'F');
         }
 
         [Fact]
