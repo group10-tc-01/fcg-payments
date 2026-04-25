@@ -1,3 +1,4 @@
+using FCG.Payments.Application.UseCases.Payments;
 using FCG.Payments.Application.UseCases.Payments.GetPaymentReport;
 using FCG.Payments.Domain.Payments;
 using FCG.Payments.Domain.Payments.Reports;
@@ -25,23 +26,32 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             // Arrange
             var pageNumber = 1;
             var pageSize = 10;
+            var status = PaymentReportStatusFilter.Approved;
+            var dateFrom = DateTime.UtcNow.AddDays(-7);
+            var dateTo = DateTime.UtcNow;
+            var userId = Guid.NewGuid();
+            var gameId = Guid.NewGuid();
             var processedAt = DateTime.UtcNow;
             var reports = new List<PaymentReport>
             {
-                new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100m, PaymentStatus.Approved, processedAt),
-                new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 50m, PaymentStatus.Rejected, processedAt.AddMinutes(-1))
+                new(Guid.NewGuid(), userId, gameId, 100m, PaymentStatus.Approved, processedAt),
+                new(Guid.NewGuid(), userId, gameId, 50m, PaymentStatus.Rejected, processedAt.AddMinutes(-1))
             };
             var summary = new PaymentReportSummary(2, 1, 1, 100m, 50m);
+            PaymentReportFilter? pagedFilter = null;
+            PaymentReportFilter? summaryFilter = null;
 
             _paymentReportRepositoryMock
-                .Setup(repository => repository.GetPagedAsync(pageNumber, pageSize, It.IsAny<CancellationToken>()))
+                .Setup(repository => repository.GetPagedAsync(It.IsAny<PaymentReportFilter>(), pageNumber, pageSize, It.IsAny<CancellationToken>()))
+                .Callback<PaymentReportFilter, int, int, CancellationToken>((filter, _, _, _) => pagedFilter = filter)
                 .ReturnsAsync((reports, reports.Count));
 
             _paymentReportRepositoryMock
-                .Setup(repository => repository.GetSummaryAsync(It.IsAny<CancellationToken>()))
+                .Setup(repository => repository.GetSummaryAsync(It.IsAny<PaymentReportFilter>(), It.IsAny<CancellationToken>()))
+                .Callback<PaymentReportFilter, CancellationToken>((filter, _) => summaryFilter = filter)
                 .ReturnsAsync(summary);
 
-            var request = new GetPaymentReportRequest(pageNumber, pageSize);
+            var request = new GetPaymentReportRequest(pageNumber, pageSize, status, dateFrom, dateTo, userId, gameId);
 
             // Act
             var response = await _sut.Handle(request, CancellationToken.None);
@@ -54,6 +64,8 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             response.TotalCount.Should().Be(2);
             response.TotalPages.Should().Be(1);
             response.Summary.Should().BeEquivalentTo(new GetPaymentReportSummaryResponse(2, 1, 1, 100m, 50m));
+            pagedFilter.Should().Be(new PaymentReportFilter(PaymentStatus.Approved, dateFrom, dateTo, userId, gameId));
+            summaryFilter.Should().Be(pagedFilter);
 
             var firstItem = response.Items.First();
             firstItem.PaymentId.Should().Be(reports[0].PaymentId);
@@ -64,10 +76,10 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             firstItem.ProcessedAt.Should().Be(reports[0].ProcessedAt);
 
             _paymentReportRepositoryMock.Verify(
-                repository => repository.GetPagedAsync(pageNumber, pageSize, It.IsAny<CancellationToken>()),
+                repository => repository.GetPagedAsync(It.IsAny<PaymentReportFilter>(), pageNumber, pageSize, It.IsAny<CancellationToken>()),
                 Times.Once);
             _paymentReportRepositoryMock.Verify(
-                repository => repository.GetSummaryAsync(It.IsAny<CancellationToken>()),
+                repository => repository.GetSummaryAsync(It.IsAny<PaymentReportFilter>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -80,14 +92,14 @@ namespace FCG.Payments.UnitTests.Application.UseCases.Payments
             var summary = new PaymentReportSummary(0, 0, 0, 0m, 0m);
 
             _paymentReportRepositoryMock
-                .Setup(repository => repository.GetPagedAsync(pageNumber, pageSize, It.IsAny<CancellationToken>()))
+                .Setup(repository => repository.GetPagedAsync(It.IsAny<PaymentReportFilter>(), pageNumber, pageSize, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(([], 0));
 
             _paymentReportRepositoryMock
-                .Setup(repository => repository.GetSummaryAsync(It.IsAny<CancellationToken>()))
+                .Setup(repository => repository.GetSummaryAsync(It.IsAny<PaymentReportFilter>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(summary);
 
-            var request = new GetPaymentReportRequest(pageNumber, pageSize);
+            var request = new GetPaymentReportRequest(pageNumber, pageSize, null, null, null, null, null);
 
             // Act
             var response = await _sut.Handle(request, CancellationToken.None);

@@ -1,3 +1,4 @@
+using FCG.Payments.Domain.Payments;
 using FCG.Payments.Domain.Payments.Reports;
 using Microsoft.Extensions.Logging;
 
@@ -19,16 +20,29 @@ namespace FCG.Payments.Application.UseCases.Payments.GetPaymentReport
         public async Task<GetPaymentReportResponse> Handle(GetPaymentReportRequest request, CancellationToken cancellationToken)
         {
             _logger.LogInformation(
-                "Handling GetPaymentReportRequest - PageNumber: {PageNumber}, PageSize: {PageSize}",
+                "Handling GetPaymentReportRequest - PageNumber: {PageNumber}, PageSize: {PageSize}, Status: {Status}, DateFrom: {DateFrom}, DateTo: {DateTo}, UserId: {UserId}, GameId: {GameId}",
                 request.PageNumber,
-                request.PageSize);
+                request.PageSize,
+                request.Status,
+                request.DateFrom,
+                request.DateTo,
+                request.UserId,
+                request.GameId);
+
+            var filter = new PaymentReportFilter(
+                ToPaymentStatus(request.Status),
+                request.DateFrom,
+                request.DateTo,
+                request.UserId,
+                request.GameId);
 
             var (reports, totalCount) = await _paymentReportRepository.GetPagedAsync(
+                filter,
                 request.PageNumber,
                 request.PageSize,
                 cancellationToken);
 
-            var summary = await _paymentReportRepository.GetSummaryAsync(cancellationToken);
+            var summary = await _paymentReportRepository.GetSummaryAsync(filter, cancellationToken);
 
             var items = reports.Select(report => new GetPaymentReportItemResponse(
                 report.PaymentId,
@@ -57,5 +71,12 @@ namespace FCG.Payments.Application.UseCases.Payments.GetPaymentReport
                 request.PageSize,
                 summaryResponse);
         }
+
+        private static PaymentStatus? ToPaymentStatus(PaymentReportStatusFilter? filter) => filter switch
+        {
+            PaymentReportStatusFilter.Approved => PaymentStatus.Approved,
+            PaymentReportStatusFilter.Rejected => PaymentStatus.Rejected,
+            _ => null
+        };
     }
 }

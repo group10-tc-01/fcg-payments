@@ -33,7 +33,7 @@ services:
             - network-fcg
 
     mongodb:
-        image: mongo:7.0
+        image: mongo:8.0
         container_name: mongodb-fcg
         ports:
             - "27017:27017"
@@ -43,7 +43,7 @@ services:
             - network-fcg
         restart: unless-stopped
         healthcheck:
-            test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok || quit(1)"]
             interval: 10s
             timeout: 5s
             retries: 5

@@ -62,15 +62,19 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb.Repositories
         public async Task Given_Reports_When_GetSummaryAsyncIsCalled_Then_Should_Return_Totalized_Summary()
         {
             // Arrange
-            var documents = new List<PaymentReportDocument>
+            var approvedDocuments = new List<PaymentReportDocument>
             {
                 CreateDocument(PaymentStatus.Approved, 100m, DateTime.UtcNow),
-                CreateDocument(PaymentStatus.Approved, 25m, DateTime.UtcNow.AddMinutes(-1)),
-                CreateDocument(PaymentStatus.Rejected, 40m, DateTime.UtcNow.AddMinutes(-2)),
-                CreateDocument(PaymentStatus.Pending, 15m, DateTime.UtcNow.AddMinutes(-3))
+                CreateDocument(PaymentStatus.Approved, 25m, DateTime.UtcNow.AddMinutes(-1))
+            };
+            var rejectedDocuments = new List<PaymentReportDocument>
+            {
+                CreateDocument(PaymentStatus.Rejected, 40m, DateTime.UtcNow.AddMinutes(-2))
             };
 
-            SetupFindAsync(documents);
+            SetupCountDocuments(4);
+            SetupFindAsyncSequence(approvedDocuments, rejectedDocuments);
+
 
             // Act
             var summary = await _sut.GetSummaryAsync(CancellationToken.None);
@@ -107,6 +111,62 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb.Repositories
             capturedOptions.Should().NotBeNull();
             capturedOptions!.Skip.Should().Be(2);
             capturedOptions.Limit.Should().Be(2);
+            capturedOptions.Sort.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task Given_Filter_When_GetPagedAsyncIsCalled_Then_Should_Use_Filter_And_Return_Domain_Page()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var gameId = Guid.NewGuid();
+            var filter = new PaymentReportFilter(
+                PaymentStatus.Approved,
+                DateTime.UtcNow.AddDays(-7),
+                DateTime.UtcNow,
+                userId,
+                gameId);
+            var documents = new List<PaymentReportDocument>
+            {
+                CreateDocument(PaymentStatus.Approved, 80m, DateTime.UtcNow, userId, gameId)
+            };
+            FilterDefinition<PaymentReportDocument>? countFilter = null;
+            FilterDefinition<PaymentReportDocument>? findFilter = null;
+
+            SetupCountDocuments(1, capturedFilter => countFilter = capturedFilter);
+            SetupFindAsync(documents, (capturedFilter, _, _) => findFilter = capturedFilter);
+
+            // Act
+            var result = await _sut.GetPagedAsync(filter, pageNumber: 1, pageSize: 10, CancellationToken.None);
+
+            // Assert
+            result.TotalCount.Should().Be(1);
+            result.Reports.Should().ContainSingle().Which.GameId.Should().Be(gameId);
+            countFilter.Should().NotBeNull();
+            findFilter.Should().BeSameAs(countFilter);
+        }
+
+        [Fact]
+        public async Task Given_Filter_When_GetAsyncIsCalled_Then_Should_Return_Filtered_Domain_Reports_With_Limit()
+        {
+            // Arrange
+            var gameId = Guid.NewGuid();
+            var filter = new PaymentReportFilter(null, null, null, null, gameId);
+            var documents = new List<PaymentReportDocument>
+            {
+                CreateDocument(PaymentStatus.Approved, 80m, DateTime.UtcNow, gameId: gameId)
+            };
+            FindOptions<PaymentReportDocument, PaymentReportDocument>? capturedOptions = null;
+
+            SetupFindAsync(documents, (_, options, _) => capturedOptions = options);
+
+            // Act
+            var reports = await _sut.GetAsync(filter, limit: 50, CancellationToken.None);
+
+            // Assert
+            reports.Should().ContainSingle().Which.GameId.Should().Be(gameId);
+            capturedOptions.Should().NotBeNull();
+            capturedOptions!.Limit.Should().Be(50);
             capturedOptions.Sort.Should().NotBeNull();
         }
 
@@ -163,6 +223,20 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb.Repositories
                 .ReturnsAsync(CreateCursor(documents).Object);
         }
 
+        private void SetupFindAsyncSequence(params IReadOnlyList<PaymentReportDocument>[] documentSets)
+        {
+            var setup = _collectionMock
+                .SetupSequence(collection => collection.FindAsync(
+                    It.IsAny<FilterDefinition<PaymentReportDocument>>(),
+                    It.IsAny<FindOptions<PaymentReportDocument, PaymentReportDocument>>(),
+                    It.IsAny<CancellationToken>()));
+
+            foreach (var documents in documentSets)
+            {
+                setup = setup.ReturnsAsync(CreateCursor(documents).Object);
+            }
+        }
+
         private static Mock<IAsyncCursor<PaymentReportDocument>> CreateCursor(
             IReadOnlyList<PaymentReportDocument> documents)
         {
@@ -182,12 +256,13 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb.Repositories
             PaymentStatus status,
             decimal amount,
             DateTime processedAt,
-            Guid? userId = null)
+            Guid? userId = null,
+            Guid? gameId = null)
         {
             return new PaymentReport(
                 Guid.NewGuid(),
                 userId ?? Guid.NewGuid(),
-                Guid.NewGuid(),
+                gameId ?? Guid.NewGuid(),
                 amount,
                 status,
                 processedAt);
@@ -197,9 +272,10 @@ namespace FCG.Payments.UnitTests.Infrastructure.MongoDb.Repositories
             PaymentStatus status,
             decimal amount,
             DateTime processedAt,
-            Guid? userId = null)
+            Guid? userId = null,
+            Guid? gameId = null)
         {
-            return PaymentReportDocument.FromDomain(CreateReport(status, amount, processedAt, userId));
+            return PaymentReportDocument.FromDomain(CreateReport(status, amount, processedAt, userId, gameId));
         }
     }
 }

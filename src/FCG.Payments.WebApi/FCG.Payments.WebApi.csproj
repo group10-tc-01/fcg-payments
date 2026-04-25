@@ -37,6 +37,7 @@
 	  <ProjectReference Include="..\FCG.Payments.Infrastructure.Auth\FCG.Payments.Infrastructure.Auth.csproj" />
 	  <ProjectReference Include="..\FCG.Payments.Infrastructure.Kafka\FCG.Payments.Infrastructure.Kafka.csproj" />
 	  <ProjectReference Include="..\FCG.Payments.Infrastructure.MongoDb\FCG.Payments.Infrastructure.MongoDb.csproj" />
+	  <ProjectReference Include="..\FCG.Payments.Infrastructure.Pdf\FCG.Payments.Infrastructure.Pdf.csproj" />
 	  <ProjectReference Include="..\FCG.Payments.Infrastructure.SqlServer\FCG.Payments.Infrastructure.SqlServer.csproj" />
 	</ItemGroup>
 
