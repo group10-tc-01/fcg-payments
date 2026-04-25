@@ -87,6 +87,89 @@ namespace FCG.Payments.IntegratedTests.Controllers
         }
 
         [Fact]
+        public async Task Given_ReportFilters_When_GetPaymentReportsIsCalled_ShouldReturnFilteredResults()
+        {
+            // Arrange
+            var report = Factory.CreatedPaymentReports.First();
+            var dateFrom = report.ProcessedAt.AddDays(-1).ToString("yyyy-MM-dd");
+            var dateTo = report.ProcessedAt.AddDays(1).ToString("yyyy-MM-dd");
+            var url = $"{BaseUrl}/reports?pageNumber=1&pageSize=10&status={report.Status}&dateFrom={dateFrom}&dateTo={dateTo}&userId={report.UserId}&gameId={report.GameId}";
+            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, adminToken);
+            var responseContent = await result.Content.ReadAsStringAsync();
+            var apiResponse = JsonSerializer.Deserialize<ApiResponse<GetPaymentReportResponse>>(responseContent, JsonOptions);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            apiResponse.Should().NotBeNull();
+            apiResponse!.Data.Items.Should().ContainSingle();
+            apiResponse.Data.Items.Single().PaymentId.Should().Be(report.PaymentId);
+            apiResponse.Data.Summary.TotalPayments.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task Given_ValidFilters_When_ExportPaymentReportsPdfIsCalled_ShouldReturnPdf()
+        {
+            // Arrange
+            var report = Factory.CreatedPaymentReports.First();
+            var url = $"{BaseUrl}/reports/export/pdf?userId={report.UserId}&gameId={report.GameId}";
+            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, adminToken);
+            var bytes = await result.Content.ReadAsByteArrayAsync();
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+            result.Content.Headers.ContentDisposition!.FileNameStar.Should().StartWith("payment-reports-");
+            bytes.Take(4).Should().Equal((byte)'%', (byte)'P', (byte)'D', (byte)'F');
+        }
+
+        [Fact]
+        public async Task Given_UserRole_When_ExportPaymentReportsPdfIsCalled_ShouldReturnForbidden()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports/export/pdf";
+            var userToken = GenerateToken(Guid.NewGuid(), "User");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, userToken);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        [Fact]
+        public async Task Given_NoAuthentication_When_ExportPaymentReportsPdfIsCalled_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports/export/pdf";
+
+            // Act
+            var result = await _httpClient.GetAsync(url);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Given_ExportResultExceedsConfiguredLimit_When_ExportPaymentReportsPdfIsCalled_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var url = $"{BaseUrl}/reports/export/pdf";
+            var adminToken = GenerateToken(Guid.NewGuid(), "Admin");
+
+            // Act
+            var result = await DoAuthenticatedGet(url, adminToken);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
         public async Task Given_ValidRequest_When_GetPaymentHistoryIsCalled_ShouldReturnOk()
         {
             // Arrange

@@ -8,6 +8,7 @@
     <Project Path="src/FCG.Payments.Infrastructure.Auth/FCG.Payments.Infrastructure.Auth.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.Kafka/FCG.Payments.Infrastructure.Kafka.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.MongoDb/FCG.Payments.Infrastructure.MongoDb.csproj" />
+    <Project Path="src/FCG.Payments.Infrastructure.Pdf/FCG.Payments.Infrastructure.Pdf.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.SqlServer/FCG.Payments.Infrastructure.SqlServer.csproj" />
     <Project Path="src/FCG.Payments.WebApi/FCG.Payments.WebApi.csproj" />
   </Folder>

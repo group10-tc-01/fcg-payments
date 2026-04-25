@@ -1,7 +1,9 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
+using FCG.Payments.Application.UseCases.Payments.ExportPaymentReport;
 using FCG.Payments.Infrastructure.SqlServer.Persistance;
 using FCG.Payments.WebApi.Filters;
 using FCG.Payments.WebApi.Observability;
+using FCG.Payments.Infrastructure.Pdf.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
@@ -33,6 +35,8 @@ namespace FCG.Payments.WebApi.DependencyInjection
             services.AddRouting(options => options.LowercaseUrls = true);
             services.AddObservability(configuration);
             services.AddSerilogLogging(configuration);
+            services.Configure<PaymentReportSettings>(configuration.GetSection(PaymentReportSettings.SectionName));
+            services.AddInfrastructurePdf();
             return services;
         }
 
@@ -155,11 +159,11 @@ namespace FCG.Payments.WebApi.DependencyInjection
 
             if (options.EnableOtlpExporter)
             {
-                Log.Information("OTLP exporter enabled — sending telemetry to {Endpoint}", options.OtlpEndpoint);
+                Log.Information("OTLP exporter enabled - sending telemetry to {Endpoint}", options.OtlpEndpoint);
             }
             else
             {
-                Log.Information("OTLP exporter disabled — telemetry is console-only");
+                Log.Information("OTLP exporter disabled - telemetry is console-only");
             }
 
             services.AddLogging(loggingBuilder =>

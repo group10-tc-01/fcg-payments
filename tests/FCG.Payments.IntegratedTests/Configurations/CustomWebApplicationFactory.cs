@@ -179,9 +179,16 @@ namespace FCG.Payments.IntegratedTests.Configurations
                 int pageSize,
                 CancellationToken cancellationToken = default)
             {
-                var reports = _reports.Where(report => report.UserId == userId);
+                return GetPagedAsync(new PaymentReportFilter(null, null, null, userId, null), pageNumber, pageSize, cancellationToken);
+            }
 
-                return GetPagedAsync(reports, pageNumber, pageSize);
+            public Task<(IEnumerable<PaymentReport> Reports, int TotalCount)> GetPagedAsync(
+                PaymentReportFilter filter,
+                int pageNumber,
+                int pageSize,
+                CancellationToken cancellationToken = default)
+            {
+                return GetPagedAsync(ApplyFilter(_reports, filter), pageNumber, pageSize);
             }
 
             public Task<(IEnumerable<PaymentReport> Reports, int TotalCount)> GetPagedAsync(
@@ -192,17 +199,81 @@ namespace FCG.Payments.IntegratedTests.Configurations
                 return GetPagedAsync(_reports, pageNumber, pageSize);
             }
 
+            public Task<IReadOnlyList<PaymentReport>> GetAsync(
+                PaymentReportFilter filter,
+                int limit,
+                CancellationToken cancellationToken = default)
+            {
+                var reports = ApplyFilter(_reports, filter)
+                    .OrderByDescending(report => report.ProcessedAt)
+                    .Take(limit)
+                    .ToList()
+                    .AsReadOnly();
+
+                return Task.FromResult((IReadOnlyList<PaymentReport>)reports);
+            }
+
             public Task<PaymentReportSummary> GetSummaryAsync(CancellationToken cancellationToken = default)
             {
-                var approvedReports = _reports.Where(report => report.Status == PaymentStatus.Approved).ToList();
-                var rejectedReports = _reports.Where(report => report.Status == PaymentStatus.Rejected).ToList();
+                return GetSummaryAsync(PaymentReportFilter.Empty, cancellationToken);
+            }
+
+            public Task<PaymentReportSummary> GetSummaryAsync(
+                PaymentReportFilter filter,
+                CancellationToken cancellationToken = default)
+            {
+                var reports = ApplyFilter(_reports, filter).ToList();
+                var approvedReports = reports.Where(report => report.Status == PaymentStatus.Approved).ToList();
+                var rejectedReports = reports.Where(report => report.Status == PaymentStatus.Rejected).ToList();
 
                 return Task.FromResult(new PaymentReportSummary(
-                    _reports.Count,
+                    reports.Count,
                     approvedReports.Count,
                     rejectedReports.Count,
                     approvedReports.Sum(report => report.Amount),
                     rejectedReports.Sum(report => report.Amount)));
+            }
+
+            private static IEnumerable<PaymentReport> ApplyFilter(
+                IEnumerable<PaymentReport> source,
+                PaymentReportFilter filter)
+            {
+                var query = source;
+
+                if (filter.Status is not null)
+                {
+                    query = query.Where(report => report.Status == filter.Status.Value);
+                }
+
+                if (filter.DateFrom is not null)
+                {
+                    query = query.Where(report => report.ProcessedAt >= filter.DateFrom.Value);
+                }
+
+                if (filter.DateTo is not null)
+                {
+                    var dateTo = NormalizeDateTo(filter.DateTo.Value);
+                    query = query.Where(report => report.ProcessedAt <= dateTo);
+                }
+
+                if (filter.UserId is not null)
+                {
+                    query = query.Where(report => report.UserId == filter.UserId.Value);
+                }
+
+                if (filter.GameId is not null)
+                {
+                    query = query.Where(report => report.GameId == filter.GameId.Value);
+                }
+
+                return query;
+            }
+
+            private static DateTime NormalizeDateTo(DateTime dateTo)
+            {
+                return dateTo.TimeOfDay == TimeSpan.Zero
+                    ? dateTo.Date.AddDays(1).AddTicks(-1)
+                    : dateTo;
             }
 
             private static Task<(IEnumerable<PaymentReport> Reports, int TotalCount)> GetPagedAsync(

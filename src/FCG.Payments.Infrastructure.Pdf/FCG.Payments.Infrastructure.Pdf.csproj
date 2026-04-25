@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+		<PackageReference Include="QuestPDF" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\FCG.Payments.Application\FCG.Payments.Application.csproj" />
+	</ItemGroup>
+
+</Project>

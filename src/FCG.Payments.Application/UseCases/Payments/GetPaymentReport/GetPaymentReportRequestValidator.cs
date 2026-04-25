@@ -15,6 +15,10 @@ namespace FCG.Payments.Application.UseCases.Payments.GetPaymentReport
                 .WithMessage("PageSize must be greater than zero")
                 .LessThanOrEqualTo(50)
                 .WithMessage("PageSize must be less than or equal to 50");
+
+            RuleFor(x => x)
+                .Must(x => x.DateFrom is null || x.DateTo is null || x.DateFrom <= x.DateTo)
+                .WithMessage("DateFrom must be less than or equal to DateTo");
         }
     }
 }
