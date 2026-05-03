@@ -1,15 +1,27 @@
 <Solution>
-  <Folder Name="/Solution Items/">
+  <Folder Name="/Itens de Solução/">
     <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path=".gitleaks.toml" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.yml" />
+    <File Path="README.md" />
   </Folder>
-  <Folder Name="/src/">
-    <Project Path="src/FCG.Payments.Application/FCG.Payments.Application.csproj" />
+  <Folder Name="/src/0 - Domain/">
     <Project Path="src/FCG.Payments.Domain/FCG.Payments.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/1 - Application/">
+    <Project Path="src/FCG.Payments.Application/FCG.Payments.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/2 - Infrastructure/">
     <Project Path="src/FCG.Payments.Infrastructure.Auth/FCG.Payments.Infrastructure.Auth.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.Kafka/FCG.Payments.Infrastructure.Kafka.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.MongoDb/FCG.Payments.Infrastructure.MongoDb.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.Pdf/FCG.Payments.Infrastructure.Pdf.csproj" />
     <Project Path="src/FCG.Payments.Infrastructure.SqlServer/FCG.Payments.Infrastructure.SqlServer.csproj" />
+  </Folder>
+  <Folder Name="/src/3 - WebApi/">
     <Project Path="src/FCG.Payments.WebApi/FCG.Payments.WebApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
