@@ -23,10 +23,11 @@ jobs:
       azure_container_registry_name: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
       aks_resource_group: ${{ vars.AKS_RESOURCE_GROUP }}
       aks_cluster_name: ${{ vars.AKS_CLUSTER_NAME }}
-      k8s_namespace: fcg-system
+      k8s_namespace: fcg-payments
       k8s_deployment_name: fcg-payments
       k8s_container_name: fcg-payments
-      k8s_manifests_path: ""
+      k8s_manifests_path: "k8s"
+      deploy_to_aks: true
       environment: production
       healthcheck_url: ${{ vars.PAYMENTS_HEALTHCHECK_URL }}
     secrets: inherit
